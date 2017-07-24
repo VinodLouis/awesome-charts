@@ -1,0 +1,36 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="awesome-charts">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <h2>Hello [[prop1]]!</h2>
+  </template>
+
+  <script>
+    /**
+     * `awesome-charts`
+     * 
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class AwesomeCharts extends Polymer.Element {
+      static get is() { return 'awesome-charts'; }
+      static get properties() {
+        return {
+          prop1: {
+            type: String,
+            value: 'awesome-charts'
+          }
+        };
+      }
+    }
+
+    window.customElements.define(AwesomeCharts.is, AwesomeCharts);
+  </script>
+</dom-module>
