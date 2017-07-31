@@ -1,0 +1,195 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<script src="../d3/d3.js"></script>
+<dom-module id="awesome-bar-chart">
+    <template>
+        <style>
+            :host {
+            display: block;
+            }
+            .axis .domain {
+              display: none;
+            }
+
+
+
+        </style>
+        <h2>Hello [[prop1]]!</h2>
+
+        <div id="groundBarChart"></div>
+    </template>
+
+    <script>
+    /**
+     * `awesome-charts`
+     *
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class AwesomeBarChart extends Polymer.Element {
+      static get is() { return 'awesome-bar-chart'; }
+      static get properties() {
+        return {
+          chartConfig:{
+            type: Object
+          },
+          defaultConfig:{
+            type: Object,
+            value:{
+                chartSize:300,
+                label:"State",
+                values:["Under 5 Years"],
+                color:[],
+                valueFormat:".2s",
+            }
+          },
+           prop1: {
+            type: String,
+            value: 'awesome-charts'
+          },
+          data:{
+            type: Array,
+            observer:'_dataChanged'
+          }
+        };
+      }
+      ready(){
+        super.ready();
+        this.paintDelayedChart();
+      }
+      _dataChanged(val){
+        if(val){
+            this.paintDelayedChart();
+        }
+      }
+      paintDelayedChart(){
+        var self = this;
+        setTimeout(()=>self.drawPieChartViz(),0)
+      }
+      drawPieChartViz(){
+        this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.defaultConfig)),this.chartConfig);
+
+        //Set Dimensions
+        var self = this;
+        var currHover = null;
+        var ow = (this.offsetWidth == 0) ? this.chartConfig.chartSize : this.offsetWidth;
+        var width = Math.floor(ow);
+        var height = Math.floor(ow*0.70);
+        var maxValue = 0;
+
+        //Remove the old scraps
+        d3.select(this.$.groundBarChart).html("");
+
+        //Prepare playground
+        var svg = d3.select(this.$.groundBarChart).append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("id","ground")
+
+        //Set Margins
+        var margin = {left:35, right:80, top: 30, bottom: 50}
+        var width = width - margin.left - margin.right;
+        var height = height - margin.bottom - margin.top;
+
+        var g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        var x0 = d3.scaleBand()
+        .rangeRound([0, width])
+        .paddingInner(0.1);
+
+        var x1 = d3.scaleBand()
+        .padding(0.05);
+
+        var y = d3.scaleLinear()
+        .rangeRound([height, 0]);
+
+        var color = (this.chartConfig.color.length > 0) ? this.chartConfig.color : d3.schemeCategory20;
+
+        var keys = this.chartConfig.values; 
+
+        x0.domain(this.data.map((d)=> d[this.chartConfig.label]));
+
+        x1.domain(keys).rangeRound([0, x0.bandwidth()]);
+
+        y.domain([0, d3.max(this.data, (d)=> d3.max(keys, (key) => d[key]))]).nice();
+
+       var rp = g.append("g")
+        .selectAll("g")
+        .data(this.data)
+        .enter().append("g")
+        .attr("transform",(d) => { return "translate(" + x0(d[this.chartConfig.label]) + ",0)"; })
+
+        rp.selectAll("rect")
+        .data(function(d) { return keys.map((key) => { return {key: key, context : d[self.chartConfig.label], value: d[key], data : d}; }); })
+        .enter().append("rect")
+        .attr("x",(d) => x1(d.key))
+        .attr("y",(d) => y(d.value))
+        .attr("width", x1.bandwidth())
+        .attr("height",(d) => { return height - y(d.value); })
+        .attr("fill", (d,i) => color[i])
+        .on("click",function(d){
+            if(self.barClick && typeof self.barClick === "function")
+               self.barClick(d,this); 
+        })
+        .append("svg:title")
+        .text((d)=>d.value)
+
+        rp.selectAll("text")
+        .data(function(d) { return keys.map((key) => { return {key: key, value: d[key]}; }); })
+        .enter().append("text")
+        .attr("x",(d) => { return x1(d.key) + x1.bandwidth()/2})
+        .attr("y",(d) => { return y(d.value) - 10})
+        .attr("stroke", (d,i) => color[i])
+        .attr("stroke-width",0.5)
+        .attr("text-anchor","middle")
+        .text((d)=> (this.chartConfig.valueFormat) ? d3.format(this.chartConfig.valueFormat)(d.value) : d.value)
+
+        g.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x0));
+
+        var yCall = d3.axisLeft(y);
+        if(this.chartConfig.valueFormat)
+            yCall.tickFormat(d3.format(this.chartConfig.valueFormat));
+
+        g.append("g")
+        .attr("class", "axis")
+        .call(yCall)
+        /*.append("text")
+        .attr("x", 2)
+        .attr("y", y(y.ticks().pop()) + 0.5)
+        .attr("dy", "0.32em")
+        .attr("fill", "#000")
+        .attr("font-weight", "bold")
+        .attr("text-anchor", "start")
+        .text("Population");*/
+
+        var legend = g.append("g")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 10)
+        .attr("text-anchor", "end")
+        .selectAll("g")
+        .data(keys.slice().reverse())
+        .enter().append("g")
+        .attr("transform",(d, i) => { return "translate(0," + i * 20 + ")"; });
+
+        legend.append("rect")
+        .attr("x", width + margin.right - 15)
+        .attr("width", 15)
+        .attr("height", 15)
+        .attr("fill", (d,i) => color[i]);
+
+        legend.append("text")
+        .attr("x", width + margin.right - 17)
+        .attr("y", 9.5)
+        .attr("dy", "0.32em")
+        .attr("text-anchor","end")
+        .text((d)=> d);
+      }
+    }
+
+    window.customElements.define(AwesomeBarChart.is, AwesomeBarChart);
+  </script>
+</dom-module>

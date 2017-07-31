@@ -1,0 +1,311 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<script src="../d3/d3.js"></script>
+<dom-module id="awesome-line-chart">
+    <template>
+        <style>
+            :host {
+            display: block;
+            }
+            .grid line {
+            stroke: #ddd;
+            }
+            .circle{
+            cursor: pointer;
+            }
+            .hide-circle{
+            display: none
+            }
+
+            .line{
+                opacity: 0.5;   
+            }
+
+
+        </style>
+        <h2>Hello [[prop1]]!</h2>
+
+        <div id="groundLineChart"></div>
+    </template>
+
+    <script>
+    /**
+     * `awesome-charts`
+     *
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class AwesomeLineChart extends Polymer.Element {
+      static get is() { return 'awesome-line-chart'; }
+      static get properties() {
+        return {
+          chartConfig:{
+            type: Object
+          },
+          defaultConfig:{
+            type: Object,
+            value:{
+                chartSize:300,
+                label:"date",
+                aggregatedTooltip:true,
+                values:["gross"],
+                legends:[],
+                timeFormat:"%d-%b-%y",
+                valueFormat:".2s",
+                xlabelRotate:45,
+                gridLines:true
+            }
+          },
+           prop1: {
+            type: String,
+            value: 'awesome-charts'
+          },
+          data:{
+            type: Array,
+            observer:'_dataChanged'
+          }
+        };
+      }
+      ready(){
+        super.ready();
+        this.paintDelayedChart();
+      }
+      _dataChanged(val){
+        if(val){
+            this.paintDelayedChart();
+        }
+      }
+      paintDelayedChart(){
+        var self = this;
+        setTimeout(()=>self.drawPieChartViz(),0)
+      }
+      drawPieChartViz(){
+        this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.defaultConfig)),this.chartConfig);
+
+        d3.selection.prototype.moveToFront = function() {  
+          return this.each(function(){
+            this.parentNode.appendChild(this);
+          });
+        };
+
+        //Set Dimensions
+        var self = this;
+        var currHover = null;
+        var ow = (this.offsetWidth == 0) ? this.chartConfig.chartSize : this.offsetWidth;
+        var width = Math.floor(ow);
+        var height = Math.floor(ow*0.70);
+        var maxValue = 0;
+        
+        //safely parse label as date
+        this.data.forEach((el)=>{
+            el.mean = Math.floor((Math.random() * 900000) + 100000);  
+            maxValue = Math.max(maxValue,this.chartConfig.values.reduce(function(m, k){ return el[k] > m ? el[k] : m }, -Infinity));
+            if (!(el[this.chartConfig.label] instanceof Date))
+                el[this.chartConfig.label] = new Date(el[this.chartConfig.label]);
+        });
+
+        //Remove the old scraps
+        d3.select(this.$.groundLineChart).html("");
+
+        //Prepare playground
+        var svg = d3.select(this.$.groundLineChart).append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("id","ground")
+
+        //In case of no data handle
+        if(this.data.length == 0){
+            svg.append("text").attr("x",width/2).attr("y",height/2).attr("text-anchor","middle").text("No Data Available to display");
+            return;
+        }
+
+        // Add the clip path.
+        svg.append("clipPath")
+        .attr("id", "clip")
+        .append("rect")
+        .attr("width", width)
+        .attr("height", height);
+
+        //Set Margins
+        var margin = {left:35, right:80, top: 30, bottom: 50}
+        var width = svg.attr("width") - margin.left - margin.right;
+        var height = svg.attr("height") - margin.bottom - margin.top;
+
+        //Prepare scales
+        var x = d3.scaleTime()
+        .rangeRound([0, width]);
+
+        var y = d3.scaleLinear()
+        .rangeRound([height, 0]);
+
+        //return continuous value
+        var parseTime = function(d){
+            return Date.parse(d)
+        }
+
+        //Set Domain for axis
+        x.domain(d3.extent(this.data,(d) => parseTime(d[this.chartConfig.label])));
+        y.domain([0, maxValue]);
+
+        //X axis Tick
+        var x_axis = d3.axisBottom(x).tickFormat((d)=>d3.timeFormat(this.chartConfig.timeFormat)(d));
+
+        //Y Axis Tick
+        var y_axis = d3.axisLeft(y)
+
+        if(this.chartConfig.gridLines)
+            y_axis = y_axis.tickSize(-width);
+
+        y_axis.tickFormat((d)=>d3.format(this.chartConfig.valueFormat)(d));
+
+
+        var multiline = (category)=>{
+            var line = d3.line()
+            .x((d) => x(parseTime(d[this.chartConfig.label])))
+            .y((d) => y(d[category]));
+            return line;
+        }
+
+
+        //Define Color
+        var color = d3.schemeCategory20;
+
+        //Bring chart to playground
+        var g = svg.append("g")
+        .attr("transform","translate(" + margin.left + "," + margin.top + ")");
+
+        // Add the X Axis
+        g.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(x_axis)
+        .selectAll("text")
+        .attr("y", 0)
+        .attr("x", 5)
+        .attr("dy", ".95em")
+        .attr("transform", "rotate(" + this.chartConfig.xlabelRotate +")")
+        .style("text-anchor", "start");
+
+        // Add the Y Axis
+        g.append("g")
+        .attr("class", "grid")
+        .call(y_axis)
+
+        //Make the gradient for all values
+
+        this.chartConfig.values.forEach((el,ind)=>{    
+
+            var lineFunction = multiline(el);
+
+            g.append("path")
+            .datum(this.data)
+            .attr("class", "line")
+            .attr("stroke",(d,i)=> color[ind])
+            .attr("fill","none")
+            .attr("d", lineFunction)
+
+            g.append("text")
+                  .datum((d) => { return {name: (this.chartConfig.legends.length > 0) ? this.chartConfig.legends[ind] : el[0].toUpperCase() + el.substr(1).toLowerCase(0) , value: this.data[this.data.length-1]}})
+                  .attr("transform",(d) => { return "translate(" + x(parseTime(d.value[this.chartConfig.label])) + "," + y(d.value[el]) + ")"; })
+                  .attr("x", 7)
+                  .attr("dy", ".35em")
+                  .text((d)=> d.name)
+                  .attr("stroke-width",0.5)
+                  .attr("stroke",()=>color[ind])
+
+            g.selectAll(".circle."+el)
+            .data(this.data)
+            .enter()
+            .append("circle")
+            .attr("cx",(d)=> x(parseTime(d.date)))
+            .attr("cy",(d)=> y(d[el]))
+            .attr("r",5)
+            .attr("class","circle "+ el)
+            .attr("stroke",(d,i)=>color[ind])
+            .attr("fill",(d,i)=>color[ind])
+            .on("click",function(d){
+                if(self.circleClick && typeof self.circleClick === "function")
+                   self.circleClick(d,this)         
+            })
+            .on('mouseenter',function(d,i){
+
+                currHover = g.append("circle").attr("cx",this.getAttribute("cx"))
+                .attr("cy",this.getAttribute("cy"))
+                .attr("r",10)
+                .attr("fill","none")
+                .attr("stroke",this.getAttribute("stroke"))
+
+            //console.log(this);
+            }).on("mouseleave",function(d,i){
+                currHover.remove();
+            })
+
+            .append("svg:title")
+            .text((d, i)=>{
+                if(this.tooltip && typeof this.tooltip === "function")
+                   return this.tooltip(d,el);
+                return el + " : " + d[el];
+            });
+
+            
+        });
+
+        /*
+        this.chartConfig.values.forEach((el,ind)=>{
+            g.selectAll(".circle."+el)
+            .transition().duration(300).delay((d,i)=> (i*300))
+            .attr('r', 5)
+            .on("end", function(){
+                if(!self.chartConfig.aggregatedTooltip || self.chartConfig.values.length > 1)
+                    d3.select(this).moveToFront();
+            });
+        });*/    
+
+        
+        
+        //g.selectAll()
+        
+
+        //TODO Animation
+        /*
+        // Add 'curtain' rectangle to hide entire graph 
+        var curtain = svg.append('rect')
+        .attr('x', -1 * (width + margin.left + 10))
+        .attr('y', -1 * (height + margin.top))
+        .attr('height', (height + margin.top))
+        .attr('width', width)
+        .attr('class', 'curtain')
+        .attr('transform', 'rotate(180)')
+        .style('fill', '#ffffff');
+
+        // Create a shared transition for anything we're animating 
+        var t = svg.transition()
+        .delay(750)
+        .duration(2000)
+        .ease(d3.easeLinear)
+        .on('end', function() {
+        d3.select('line.guide')
+        .transition()
+        .style('opacity', 0)
+        .remove()
+         //svg.append("text")
+        //.attr("x", (width / 2))
+        //.attr("y", (margin.top - margin.top/2))
+        //.attr("text-anchor", "middle")
+        //.style("font-size", "12px")
+        //.text("Click on points to drill down and anywhere on chart to reset");
+
+        });
+
+        t.select('rect.curtain')
+        .attr('width', 0);
+        t.select('line.guide')
+        .attr('transform', 'translate(' + width + ', 0)')
+
+        */
+      }
+    }
+
+    window.customElements.define(AwesomeLineChart.is, AwesomeLineChart);
+  </script>
+</dom-module>

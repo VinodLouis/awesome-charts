@@ -1,0 +1,431 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<script src="../d3/d3.js"></script>
+<dom-module id="awesome-area-chart">
+    <template>
+        <style>
+            :host {
+            display: block;
+            }
+            .grid line {
+            stroke: #ddd;
+            }
+            .circle{
+            cursor: pointer;
+            }
+            .hide-circle{
+            display: none
+            }
+
+            .line{
+                opacity: 0.5;   
+            }
+
+
+        </style>
+        <h2>Hello [[prop1]]!</h2>
+
+        <div id="groundAreaChart"></div>
+    </template>
+
+    <script>
+    /**
+     * `awesome-charts`
+     *
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class AwesomeAreaChart extends Polymer.Element {
+      static get is() { return 'awesome-area-chart'; }
+      static get properties() {
+        return {
+          chartConfig:{
+            type: Object
+          },
+          defaultConfig:{
+            type: Object,
+            value:{
+                chartSize:300,
+                label:"date",
+                aggregatedTooltip:true,
+                values:["gross"],
+                legends:[],
+                drawCircle:false,
+                timeFormat:"%d-%b-%y",
+                valueFormat:".2s",
+                xlabelRotate:45,
+                gridLines:true
+            }
+          },
+           prop1: {
+            type: String,
+            value: 'awesome-charts'
+          },
+          data:{
+            type: Array,
+            observer:'_dataChanged'
+          }
+        };
+      }
+      ready(){
+        super.ready();
+        this.paintDelayedChart();
+      }
+      _dataChanged(val){
+        if(val){
+            this.paintDelayedChart();
+        }
+      }
+      paintDelayedChart(){
+        var self = this;
+        setTimeout(()=>self.drawPieChartViz(),0)
+      }
+      drawPieChartViz(){
+        this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.defaultConfig)),this.chartConfig);
+
+        d3.selection.prototype.moveToFront = function() {  
+          return this.each(function(){
+            this.parentNode.appendChild(this);
+          });
+        };
+
+        //Set Dimensions
+        var self = this;
+        var currHover = null;
+        var ow = (this.offsetWidth == 0) ? this.chartConfig.chartSize : this.offsetWidth;
+        var width = Math.floor(ow);
+        var height = Math.floor(ow*0.70);
+        var maxValue = 0;
+        
+        //safely parse label as date
+        this.data.forEach((el)=>{
+            el.mean = Math.floor((Math.random() * 900000) + 100000);  
+            maxValue = Math.max(maxValue,this.chartConfig.values.reduce(function(m, k){ return el[k] > m ? el[k] : m }, -Infinity));
+            if (!(el[this.chartConfig.label] instanceof Date))
+                el[this.chartConfig.label] = new Date(el[this.chartConfig.label]);
+        });
+
+        //Remove the old scraps
+        d3.select(this.$.groundAreaChart).html("");
+
+        //Prepare playground
+        var svg = d3.select(this.$.groundAreaChart).append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("id","ground")
+
+        //In case of no data handle
+        if(this.data.length == 0){
+            svg.append("text").attr("x",width/2).attr("y",height/2).attr("text-anchor","middle").text("No Data Available to display");
+            return;
+        }
+
+        // Add the clip path.
+        svg.append("clipPath")
+        .attr("id", "clip")
+        .append("rect")
+        .attr("width", width)
+        .attr("height", height);
+
+        //Set Margins
+        var margin = {left:35, right:80, top: 30, bottom: 50}
+        var width = svg.attr("width") - margin.left - margin.right;
+        var height = svg.attr("height") - margin.bottom - margin.top;
+
+        //Prepare scales
+        var x = d3.scaleTime()
+        .rangeRound([0, width]);
+
+        var y = d3.scaleLinear()
+        .rangeRound([height, 0]);
+
+        //return continuous value
+        var parseTime = function(d){
+            return Date.parse(d)
+        }
+
+        //Set Domain for axis
+        x.domain(d3.extent(this.data,(d) => parseTime(d[this.chartConfig.label])));
+        y.domain([0, maxValue]);
+
+        //X axis Tick
+        var x_axis = d3.axisBottom(x).tickFormat((d)=>d3.timeFormat(this.chartConfig.timeFormat)(d));
+
+        //Y Axis Tick
+        var y_axis = d3.axisLeft(y)
+
+        if(this.chartConfig.gridLines)
+            y_axis = y_axis.tickSize(-width);
+
+        y_axis.tickFormat((d)=>d3.format(this.chartConfig.valueFormat)(d));
+
+
+        var multiline = (category)=>{
+            var line = d3.line()
+            .x((d) => x(parseTime(d[this.chartConfig.label])))
+            .y((d) => y(d[category]));
+            return line;
+        }
+
+        var multiarea = (category)=>{
+            var area = d3.area()
+            .x((d) => x(parseTime(d.date)))
+            .y0(height)
+            .y1((d)=> y(d[category]));
+            return area;
+        }
+
+        var gradient = (gradientColor)=>{
+            if(typeof gradientColor === "string"){
+                return [{offset: "0%", color: "#ffffff"},{offset: "100%", color: gradientColor}];
+            }
+            
+            var arrGradient = []
+            for(var prop in gradientColor){
+                arrGradient.push({offset:prop,color:gradientColor[prop]});
+            }
+            return arrGradient;
+        }
+
+        //Define Color
+        var color = d3.schemeCategory10;
+        var gradientColor = d3.schemeCategory10;
+
+        //Bring chart to playground
+        var g = svg.append("g")
+        .attr("transform","translate(" + margin.left + "," + margin.top + ")");
+
+        // Add the X Axis
+        g.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(x_axis)
+        .selectAll("text")
+        .attr("y", 0)
+        .attr("x", 5)
+        .attr("dy", ".95em")
+        .attr("transform", "rotate(" + this.chartConfig.xlabelRotate +")")
+        .style("text-anchor", "start");
+
+        // Add the Y Axis
+        g.append("g")
+        .attr("class", "grid")
+        .call(y_axis)
+
+        //Make the gradient for all values
+
+        this.chartConfig.values.forEach((el,ind)=>{
+            
+            svg.append("linearGradient")
+            .attr("id", "AreaFillgradient_"+ el)
+            .attr("gradientUnits", "userSpaceOnUse")
+            .attr("x1", 0).attr("y1", y(0))
+            .attr("x2", 0).attr("y2", y(maxValue))
+            .selectAll("stop")
+            .data(gradient(gradientColor[ind]))
+            .enter().append("stop")
+            .attr("offset",(d)=> d.offset)
+            .attr("stop-color",(d)=> d.color);    
+
+            var lineFunction = multiline(el);
+            var areaFunction = multiarea(el);
+
+            g.append("path")
+            .datum(this.data)
+            .attr("class", "line")
+            .attr("stroke",(d,i)=> color[ind])
+            .attr("fill","none")
+            .attr("d", lineFunction)
+
+            g.append("path")
+            .datum(this.data)
+            .attr("class", "line")
+            .attr("stroke", ()=> color[ind])
+            .attr("fill","url(#AreaFillgradient_" + el + ")")
+            .attr("d", areaFunction)
+
+            g.append("text")
+                  .datum((d) => { return {name: (this.chartConfig.legends.length > 0) ? this.chartConfig.legends[ind] : el[0].toUpperCase() + el.substr(1).toLowerCase(0) , value: this.data[this.data.length-1]}})
+                  .attr("transform",(d) => { return "translate(" + x(parseTime(d.value[this.chartConfig.label])) + "," + y(d.value[el]) + ")"; })
+                  .attr("x", 7)
+                  .attr("dy", ".35em")
+                  .text((d)=> d.name)
+                  .attr("stroke-width",0.5)
+                  .attr("stroke",()=>color[ind])
+            if(this.chartConfig.drawCircle || (this.circleClick && typeof this.circleClick === "function")){
+                g.selectAll(".circle."+el)
+            .data(this.data)
+            .enter()
+            .append("circle")
+            .attr("cx",(d)=> x(parseTime(d.date)))
+            .attr("cy",(d)=> y(d[el]))
+            .attr("r",5)
+            .attr("class","circle "+ el)
+            .attr("stroke",(d,i)=>color[ind])
+            .attr("fill",(d,i)=>color[ind])
+            .on("click",function(d){
+                if(self.circleClick && typeof self.circleClick === "function")
+                   self.circleClick(d,this)         
+            })
+            .on('mouseenter',function(d,i){
+
+                currHover = g.append("circle").attr("cx",this.getAttribute("cx"))
+                .attr("cy",this.getAttribute("cy"))
+                .attr("r",10)
+                .attr("fill","none")
+                .attr("stroke",this.getAttribute("stroke"))
+
+            //console.log(this);
+            }).on("mouseleave",function(d,i){
+                currHover.remove();
+            })
+            .append("svg:title")
+            .text((d, i)=>{
+                if(this.tooltip && typeof this.tooltip === "function")
+                   return this.tooltip(d,el);
+                return el + " : " + d[el];
+            });    
+            }      
+        });
+
+        /*
+        this.chartConfig.values.forEach((el,ind)=>{
+            g.selectAll(".circle."+el)
+            .transition().duration(300).delay((d,i)=> (i*300))
+            .attr('r', 5)
+            .on("end", function(){
+                if(!self.chartConfig.aggregatedTooltip || self.chartConfig.values.length > 1)
+                    d3.select(this).moveToFront();
+            });
+        });*/    
+
+        
+        
+        //g.selectAll()
+        
+
+        //TODO Animation
+        /*
+        // Add 'curtain' rectangle to hide entire graph 
+        var curtain = svg.append('rect')
+        .attr('x', -1 * (width + margin.left + 10))
+        .attr('y', -1 * (height + margin.top))
+        .attr('height', (height + margin.top))
+        .attr('width', width)
+        .attr('class', 'curtain')
+        .attr('transform', 'rotate(180)')
+        .style('fill', '#ffffff');
+
+        // Create a shared transition for anything we're animating 
+        var t = svg.transition()
+        .delay(750)
+        .duration(2000)
+        .ease(d3.easeLinear)
+        .on('end', function() {
+        d3.select('line.guide')
+        .transition()
+        .style('opacity', 0)
+        .remove()
+         //svg.append("text")
+        //.attr("x", (width / 2))
+        //.attr("y", (margin.top - margin.top/2))
+        //.attr("text-anchor", "middle")
+        //.style("font-size", "12px")
+        //.text("Click on points to drill down and anywhere on chart to reset");
+
+        });
+
+        t.select('rect.curtain')
+        .attr('width', 0);
+        t.select('line.guide')
+        .attr('transform', 'translate(' + width + ', 0)')
+
+        */
+
+        if(!this.chartConfig.aggregatedTooltip || this.chartConfig.values.length > 1)
+            return;
+
+        //ToolTip formation
+        var bisectDate = d3.bisector((d) => d.date).left;
+
+        var rectHov = svg.append("svg:rect")
+        .attr("transform",
+        "translate(" + margin.left + "," + margin.top + ")")
+        .attr("height",height)
+        .attr("width",width+margin.right)
+        .attr("fill","none")
+        .attr('pointer-events', 'all')
+        .on("mouseout", hoverMouseOff)
+        .on("mousemove", hoverMouseOn);
+
+        var hoverLineGroup = svg.append("g")
+        .attr("transform",
+        "translate(" + margin.left + "," + margin.top + ")")
+        .attr("class", "hover-line");
+        var hoverLine = hoverLineGroup
+        .append("line")
+        .attr("stroke", "#666666")
+        .attr("x1", margin.bottom).attr("x2", 10)
+        .attr("y1", 0).attr("y2", height)
+        .style("stroke-dasharray", ("3, 3"));
+        /*var hoverrect = hoverLineGroup.append("rect")
+        .attr("width","70px")
+        .attr("height","25px")
+        .attr("fill","#e5e5e5")*/
+
+        var hoverTT = hoverLineGroup.append('text')
+        .attr("dy", ".35em")
+        .attr("text-anchor","middle")
+        .attr("class", "hover-tex capo")
+        .style("font-size", "12px")
+        //.attr('y', height-20);
+        /*var cle = hoverLineGroup.append("circle")
+        .attr("r", 4.5);*/
+        /*var hoverTT2 = hoverLineGroup.append('text')
+        .attr("class", "hover-text capo")*/
+
+        hoverLineGroup.style("opacity", 1e-6);
+        /*var rectHover = svg.append("rect")
+        .data(data)
+        .attr("fill", "none")
+        .attr("class", "overlay")
+        .attr("width", width)
+        .attr("height", height);*/
+
+        function hoverMouseOn() {
+        var mouse_x = d3.mouse(this)[0];
+        var mouse_y = d3.mouse(this)[1];
+        var graph_y = y.invert(mouse_y);
+        var graph_x = x.invert(mouse_x);
+        var mouseDate = x.invert(mouse_x);
+        var i = bisectDate(self.data, mouseDate); // returns the index to the current data item
+        //console.log(i,graph_y,graph_x,mouseDate)
+        //var d0 = data[i - 1]
+        //var d1 = data[i];
+        // work out which date value is closest to the mouse
+        //var d = mouseDate - d0[0] > d1[0] - mouseDate ? d1 : d0;
+        hoverTT.text(
+            (self.tooltip && typeof self.tooltip === "function") ? self.tooltip(self.data[i-1],self.chartConfig.values[0]) : d3.timeFormat(self.chartConfig.timeFormat)(self.data[i-1][self.chartConfig.label]) + " ," + d3.format(self.chartConfig.valueFormat)(self.data[i-1][self.chartConfig.values[0]])
+            );
+        //hoverrect.attr('x', x(self.data[i-1][self.chartConfig.label])-50);
+        //hoverrect.attr('y', -25);
+        hoverTT.attr('x', x(self.data[i-1][self.chartConfig.label])-15);
+        hoverTT.attr('y', -12.5);
+
+
+        /*cle.attr('x', mouse_x)
+        .attr('y', mouse_y);*/
+
+        hoverLine.attr("x1",x(self.data[i-1][self.chartConfig.label])).attr("x2", x(self.data[i-1][self.chartConfig.label]))
+        hoverLineGroup.style("opacity", 1);
+        }
+
+        function hoverMouseOff() {
+        hoverLineGroup.style("opacity", 1e-6);
+        }
+      }
+    }
+
+    window.customElements.define(AwesomeAreaChart.is, AwesomeAreaChart);
+  </script>
+</dom-module>

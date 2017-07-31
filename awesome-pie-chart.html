@@ -1,0 +1,272 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<script src="../d3/d3.js"></script>
+<dom-module id="awesome-pie-chart">
+    <template>
+        <style>
+            :host {
+            display: block;
+            }
+
+            .line {
+            fill: none;
+            stroke: steelblue;
+            stroke-width: 2px;
+            }
+
+            .svg-playground{
+            background-color:#ffffff;
+            }
+
+            path.slice{
+            stroke-width:2px;
+            }
+
+            polyline{
+            opacity: .3;
+            stroke: black;
+            stroke-width: 2px;
+            fill: none;
+            pointer-events:none;
+            }
+
+            .path-link{
+            cursor:pointer;
+            }
+
+            .pie-label-text{
+            font-size:11px;
+            stroke-width:0.5;
+            }
+        </style>
+        <h2>Hello [[prop1]]!</h2>
+
+        <div id="spanningPieChart"></div>
+    </template>
+
+    <script>
+    /**
+     * `awesome-charts`
+     *
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class AwesomePieChart extends Polymer.Element {
+      static get is() { return 'awesome-pie-chart'; }
+      static get properties() {
+        return {
+          chartConfig:{
+            type: Object
+          },
+          defaultConfig:{
+            type: Object,
+            value:{
+               chartSize:300,
+               radiusSize:0.8,
+               labelsInside:false,
+               color:[],
+               disableHoverAnimation:false,
+               label:"",
+               prop:"",
+               outerRadius:0.7,
+               innerRadius:0.4,
+               cornerRadius:3,
+               padding:0.015,
+               spanningLine:0.8,
+               hoverRadius:0.8,
+               textPositionRadius:0.7
+            }
+          },
+          prop1: {
+            type: String,
+            value: 'awesome-charts'
+          },
+          data:{
+            type: Array,
+            value:[],
+            observer:'_dataChanged'
+          }
+        };
+      }
+      ready(){
+        super.ready();
+      }
+      _dataChanged(val){
+        if(val){
+            if(!this.chartConfig.label){
+                throw new Error("'label' property not defined for chartConfig");
+                return;
+            }
+            if(!this.chartConfig.prop){
+                throw new Error("'prop' property not defined for chartConfig");
+                return;
+            }
+            this.paintDelayedChart();
+        }
+      }
+      paintDelayedChart(){
+        var self = this;
+        setTimeout(()=>self.drawPieChartViz(),0)
+      }
+      drawPieChartViz(){
+        this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.defaultConfig)),this.chartConfig);
+
+        //Remove the old scraps
+        d3.select(this.$.spanningPieChart).html("");
+
+        //Size and margin set
+        var self = this;
+        var margin = {top: 20, right: 0, bottom: 0, left: 0};
+        var width = (this.offsetWidth == 0) ? this.chartConfig.chartSize : this.offsetWidth;
+        var height = width;
+        width = width - margin.left - margin.right,
+        height = height - margin.top - margin.bottom;
+
+        //Calculate the size of the radius
+        var radius = Math.floor((Math.min(width, height) / 2) * this.chartConfig.radiusSize) ;
+
+        //some cosmetics
+        var legendRectSize = (radius * 0.05);
+        var legendSpacing = radius * 0.04;
+
+
+        //Set the color scale
+        var color = (this.chartConfig.color.length > 0) ? this.chartConfig.color : d3.schemeCategory20;
+
+        //Begin the chart drawing by property passed
+        var pie = d3.pie()
+        .value((d)=>d[this.chartConfig.prop])
+        .sort(null);
+
+        //Get the basic arc in place based on passed params
+        var arc = d3.arc()
+        .outerRadius(radius * this.chartConfig.outerRadius)
+        .innerRadius(radius * this.chartConfig.innerRadius)
+        .cornerRadius(this.chartConfig.cornerRadius)
+        .padAngle(this.chartConfig.padding);
+
+        //Get the outer arc padded so that spanning polyline can be drawn
+        var outerArc = d3.arc()
+        .outerRadius(radius * this.chartConfig.spanningLine)
+        .innerRadius(radius * this.chartConfig.spanningLine);
+
+        //Define Arc params on hover effect
+        var outerArcAnimate = d3.arc()
+        .outerRadius(radius * this.chartConfig.hoverRadius)
+        .cornerRadius(this.chartConfig.cornerRadius)
+        .padAngle(this.chartConfig.padding)
+        .innerRadius(radius * this.chartConfig.innerRadius);
+
+        //Lets get the ground ready for charts
+        var svg = d3.select(this.$.spanningPieChart).append('svg')
+        .attr('width', width + margin.left + margin.right)
+        .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+        .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')');
+
+        //Group elements such as they adhere to a modular approach
+        var slices = svg.append('g').attr('class', 'slices');
+        var labels = svg.append('g').attr('class', 'labelName');
+        var lines = svg.append('g').attr('class', 'lines');
+        var legends = svg.append('g').attr('class','legend')
+
+        //Add the basic shape using `arc` defined earlier
+        var path = slices.selectAll("path")
+        .data(pie(this.data))
+        .enter().append('path')
+        .attr("class","path-link")
+        .attr('fill',(d,i)=> color[i])
+        .attr('d', arc)
+        .on("mouseenter",function(d){
+            if(self.chartConfig.disableHoverAnimation)
+                return;
+            d3.select(this)
+            .transition()
+            .duration(1000)
+            .attr("d", outerArcAnimate)
+        })
+        .on("mouseleave",function(d){
+            if(self.chartConfig.disableHoverAnimation)
+                return;
+            d3.select(this).transition()
+            .attr("d", arc)
+        })
+        .on('click',function(d){
+            //pass data and element
+            self.pieClick(d.data,d,this);
+        })
+        .append("title").text(function(d){
+            return (self.hoverLabels && typeof self.hoverLabels === "function") ? self.hoverLabels(d.data,d,this) : ((d.endAngle - d.startAngle) / (2 * Math.PI) * 100).toFixed(1) + " %";
+        });
+
+        if(!this.chartConfig.labelsInside){
+            //draw the spanning labels
+            var label = labels.selectAll('text')
+            .data(pie(this.data))
+            .enter().append('text')
+            .attr('dy', '.35em')
+            .html(function(d){
+                //add "key: value" for given category.
+                return (self.spanLabels && typeof self.spanLabels === "function") ? self.spanLabels(d.data,d,this) : d.data[self.chartConfig.label] + ': <tspan>' + d.data[self.chartConfig.prop] + '</tspan>';
+            })
+            .attr('class',"pie-label-text")
+            .attr('transform',(d)=>{
+                // effectively computes the centre of the slice.
+                // see https://github.com/d3/d3-shape/blob/master/README.md#arc_centroid
+                var pos = outerArc.centroid(d);
+                // changes the point to be on left or right depending on where label is.
+                pos[0] = radius * this.chartConfig.textPositionRadius * (midAngle(d) < Math.PI ? 1 : -1);
+                return 'translate(' + pos + ')';
+            })
+            .style('text-anchor',(d)=>{
+                // if slice centre is on the left, anchor text to start, otherwise anchor to end
+                return (midAngle(d)) < Math.PI ? 'start' : 'end';
+            });
+
+            // add lines connecting labels to slice. A polyline creates straight lines connecting several points
+            var polyline = lines.selectAll('polyline')
+            .data(pie(this.data))
+            .enter().append('polyline')
+            .attr('points',(d)=>{
+                // see label transform function for explanations of these three lines.
+                var pos = outerArc.centroid(d);
+                pos[0] = radius * this.chartConfig.textPositionRadius * (midAngle(d) < Math.PI ? 1 : -1);
+                return [arc.centroid(d), outerArc.centroid(d), pos]
+            });
+
+            // calculates the angle for the middle of a slice
+            function midAngle(d) { return d.startAngle + (d.endAngle - d.startAngle) / 2; }
+        }else{
+            var legend = legends.selectAll('.legend')
+            .data(this.data)
+            .enter()
+            .append('g')
+            .attr('class', 'legend')
+            .attr('transform',(d,i)=> {
+                var height = legendRectSize + legendSpacing;
+                var offset = height * this.data.length / 2;
+                var horz = -6 * legendRectSize;
+                var vert = i * height - offset;
+                return 'translate(' + horz + ',' + vert + ')';
+            });
+
+            legend.append('rect')
+            .attr('width', legendRectSize)
+            .attr('height', legendRectSize)
+            .style('fill', (d,i)=> color[i])
+            .style('stroke', (d,i)=> color[i]);
+
+            legend.append('text')
+            .attr('x', legendRectSize + legendSpacing)
+            .attr('y', legendRectSize)
+            .text(function(d) {
+                return d[self.chartConfig.label]
+            });
+        }
+      }
+    }
+
+    window.customElements.define(AwesomePieChart.is, AwesomePieChart);
+  </script>
+</dom-module>
