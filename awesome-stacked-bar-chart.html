@@ -10,22 +10,116 @@
               display: none;
             }
 
+            .legend-text{
+                font-family: var(--legend-text-font-family,sans-serif);
+                font-size:var(--legend-text-font-size,11px);
+            }
+
+            .grid line {
+                stroke: var(--grid-stroke-color,#ddd);
+                stroke-width:var(--grid-stroke-width,1px);
+            }
+
+            .bisector{
+                stroke:var(--bar-bisector-color,#000000);
+                stroke-width:var(--bar-bisector-width,0.2px);
+            }
+
+            .cursor-pointer{
+                cursor:pointer;
+            }
+
+            .bar:hover{
+                stroke:var(--bar-hover-color,#000000);
+                stroke-width:var(--bar-hover-width,1px);
+            }
 
 
         </style>
-        <h2>Hello [[prop1]]!</h2>
-
         <div id="groundStackedBarChart"></div>
     </template>
 
     <script>
     /**
-     * `awesome-charts`
+     * `awesome-stacked-bar-chart`
      *
      *
-     * @customElement
+     * @AwesomeStackedBarChart
      * @polymer
-     * @demo demo/index.html
+     * @demo demo/awesome-stacked-bar-chart.html
+         ------------
+          Properties
+         ------------
+         #1: Data is the array of object with minimal 2 key value pair which can act as label and key(s) for area chart
+         *REQUIRED
+         data : {
+            type: Array,
+            //A minimal key value pair which can be user for label and value for chart
+            value:[{"2001":129,"2002":144,"2003":113,"2004":122,"2005":139,"2006":133,"2007":156,"2008":143,"2009":131,"2010":156,"2011":136,"2012":121,"2013":151,"state":"A & N ISLANDS","code":"AN","position":[11.7401,92.6586]},{"2001":70,"2002":87,"2003":103,"2004":75,"2005":89,"2006":80,"2007":82,"2008":83,"2009":75,"2010":71,"2011":105,"2012":114,"2013":97,"state":"CHANDIGARH","code":"CH","position":[30.7333,76.7794]},{"2001":50,"2002":50,"2003":52,"2004":39,"2005":69,"2006":42,"2007":76,"2008":60,"2009":56,"2010":63,"2011":63,"2012":66,"2013":84,"state":"D & N HAVELI","code":"DN","position":[20.1809,73.0169]},{"2001":14,"2002":17,"2003":24,"2004":13,"2005":32,"2006":22,"2007":15,"2008":19,"2009":23,"2010":31,"2011":33,"2012":36,"2013":29,"state":"DAMAN & DIU","code":"DD","position":[20.25,72.53]},{"2001":1239,"2002":1053,"2003":1153,"2004":1256,"2005":1245,"2006":1492,"2007":1481,"2008":1303,"2009":1477,"2010":1543,"2011":1716,"2012":1899,"2013":2059,"state":"DELHI (UT)","code":"DL","position":[28.6448,77.21672]},{"2001":0,"2002":0,"2003":2,"2004":0,"2005":0,"2006":2,"2007":3,"2008":0,"2009":1,"2010":1,"2011":0,"2012":1,"2013":3,"state":"LAKSHADWEEP","code":"LD","position":[10,73]},{"2001":14618,"2002":14529,"2003":14760,"2004":14729,"2005":14426,"2006":15494,"2007":15184,"2008":14374,"2009":14300,"2010":15916,"2011":15947,"2012":16112,"2013":16622,"state":"MAHARASHTRA","code":"MH","position":[19.7515,75.7139]},{"2001":529,"2002":567,"2003":582,"2004":539,"2005":538,"2006":526,"2007":517,"2008":507,"2009":518,"2010":508,"2011":557,"2012":541,"2013":546,"state":"PUDUCHERRY","code":"PY","position":[11.9139,79.8145]},{"2001":11290,"2002":11244,"2003":11872,"2004":12839,"2005":12076,"2006":12381,"2007":13811,"2008":14425,"2009":14424,"2010":16561,"2011":15963,"2012":16927,"2013":16601,"state":"TAMIL NADU","code":"TN","position":[11.1271,78.6569]},{"2001":13690,"2002":13007,"2003":13280,"2004":13424,"2005":15015,"2006":15725,"2007":14860,"2008":14852,"2009":14648,"2010":16037,"2011":16492,"2012":1325,"2013":13055,"state":"WEST BENGAL","code":"WB","position":[22.9868,87.855]}];
+         }
+
+         #2 chart-config an composite object of properties not all are required provides additional customization to chart
+         chartConfig:{
+            type:Object,
+            value:{
+               ////default size of the chart if container has no width
+               chartSize:300,
+
+               //The label of the context under which chart will be drawn the x axis property
+               label:"",
+
+               //Keys for bar value can be a single string(Single bar chart) or array of keys(Multiple bar chart)
+               keys:"",
+
+               //Array of color to be used for paining bar chart, length should be equal or greater than keys
+               color:[],
+
+               //Similar to keys These values are preferred over keys for legend text
+               legends:"",
+
+               //The y axis format identifier must be an valid d3.js number oarse specifier(https://github.com/d3/d3-format)
+               valueFormat:".2s",
+
+               //draw background gridlines if set to true
+               gridLines:true,
+
+               //Object of properties left,right,top,bottom : To set margins useful in case of handling long labels
+               margin:{left:35, right:80, top: 30, bottom: 50},
+
+               //sort the single or multiple values in accumulated total 1=> ASC, -1=>DESC
+               sort:0,
+
+               //The padding value between two groups labels
+               paddingLabelsGroup:0.1
+            }
+         }
+
+         ----------
+          Methods
+         ----------
+          #1 : bar-click
+            Function called when a bar is clicked
+            Passing parameters include (param1:The data in context,param2:The svg object under context)
+
+         ----------
+          Events
+         ----------
+          #1 : tooltip
+            Hook for showing custom tooltip as text
+            Return type: String
+            Passing parameters include (param1:The data in context,param2:The whole object data)
+
+         ----------
+          Mixins
+         ----------
+          --grid-stroke-color : Set grid line color
+          --grid-stroke-width : Set width of the grid lines
+          --bar-hover-color : Bar border color on hover
+          --bar-hover-width : Bar border width color on hover
+          --legend-text-font-family : legend font family
+          --legend-text-font-size : legend font size
+          --bar-bisector-color : bar separation color between different labels
+          --bar-bisector-width : bar separation width between different labels
      */
     class AwesomeStackedBarChart extends Polymer.Element {
       static get is() { return 'awesome-stacked-bar-chart'; }
@@ -34,19 +128,21 @@
           chartConfig:{
             type: Object
           },
-          defaultConfig:{
+          __defaultConfig:{
             type: Object,
             value:{
                 chartSize:300,
-                label:"State",
-                values:["Under 5 Years","5 to 13 Years"],
+                label:"",
+                keys:"",
                 color:[],
+                legends:"",
                 valueFormat:".2s",
-            }
-          },
-           prop1: {
-            type: String,
-            value: 'awesome-charts'
+                gridLines:true,
+                margin:{top: 20, right: 80, bottom: 30, left: 50},
+                sort:0,
+                paddingLabelsGroup:0.1
+            },
+            observer:'_dataChanged'
           },
           data:{
             type: Array,
@@ -56,19 +152,85 @@
       }
       ready(){
         super.ready();
-        this.paintDelayedChart();
       }
-      _dataChanged(val){
-        if(val){
+      _dataChanged(){
+        if(this.data){
+            //The Mandatory check
+            if(!this.chartConfig.label || typeof this.chartConfig.label !== "string"){
+                 throw new Error("'label' property under chartConfig should be an appropriate string value");
+                 return;
+            }
+            if(!this.chartConfig.keys || (typeof this.chartConfig.keys !== "string" && !Array.isArray(this.chartConfig.keys))){
+                 throw new Error("'keys' property under chartConfig should be an appropriate string/array value");
+                 return;
+            }
+
+            //Convert keys to array
+            this.chartConfig.keys = (!Array.isArray(this.chartConfig.keys)) ? [this.chartConfig.keys] : this.chartConfig.keys;
+
+            //Safe check for color
+            if(this.chartConfig.color){
+                if(!Array.isArray(this.chartConfig.color)){
+                    (console ? (console.warn || console.log) : function (m) { return m; })("color should be a valid array");
+                    this.chartConfig.color = this.__defaultConfig.color;
+                }else if(this.chartConfig.color.length < this.chartConfig.keys.length){
+                    (console ? (console.warn || console.log) : function (m) { return m; })("color length should be equal to keys length");
+                    this.chartConfig.color = this.__defaultConfig.color;
+                }
+            }
+
+            //Safe check for legends
+            if(this.chartConfig.legends){
+                if(typeof this.chartConfig.legends !== "string" && !Array.isArray(this.chartConfig.legends)){
+                    (console ? (console.warn || console.log) : function (m) { return m; })("legends should be valid string/array");
+                    this.chartConfig.legends = this.__defaultConfig.legends;
+                }else if(typeof this.chartConfig.legends === "string" && this.chartConfig.keys.length !== 1){
+                    (console ? (console.warn || console.log) : function (m) { return m; })("legends should be an array or more than 1 as keys");
+                    this.chartConfig.legends = this.__defaultConfig.legends;
+                }else if(Array.isArray(this.chartConfig.legends) && this.chartConfig.legends.length < this.chartConfig.keys.length){
+                    (console ? (console.warn || console.log) : function (m) { return m; })("legends should be an array or more than 1 as keys");
+                    this.chartConfig.legends = this.__defaultConfig.legends;
+                }
+            }
+
+            //Safe check for sort
+            if(this.chartConfig.sort && [-1,0,1].indexOf(this.chartConfig.sort) === -1){
+                (console ? (console.warn || console.log) : function (m) { return m; })("sort is not valid");
+                this.chartConfig.sort = this.__defaultConfig.sort;
+            }
+
+            //Safe check for margin
+            if(this.chartConfig.margin){
+                if(typeof this.chartConfig.margin !== "object"){
+                    (console ? (console.warn || console.log) : function (m) { return m; })("margin not valid object");
+                    this.chartConfig.margin = this.__defaultConfig.margin;
+                }else{
+                    var arrM = ["top","bottom","right","left"];
+                    arrM.forEach((d)=>{
+                        if(this.chartConfig.margin.hasOwnProperty(d) && typeof this.chartConfig.margin[d] !== "number"){
+                            (console ? (console.warn || console.log) : function (m) { return m; })(d + " in margin is not a valid number");
+                            this.chartConfig.margin[d] = this.__defaultConfig.margin[d];
+                        }
+                    });
+                }
+            }
+
+            //Safe check for paddingLabelsGroup
+            if(this.chartConfig.paddingLabelsGroup && typeof this.chartConfig.paddingLabelsGroup !== "number"){
+                this.chartConfig.paddingLabelsGroup = this.__defaultConfig.paddingLabelsGroup;
+            }
+
             this.paintDelayedChart();
         }
       }
       paintDelayedChart(){
         var self = this;
-        setTimeout(()=>self.drawPieChartViz(),0)
+        setTimeout(()=>self.drawStackedBarChartViz(),0)
       }
-      drawPieChartViz(){
-        this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.defaultConfig)),this.chartConfig);
+      drawStackedBarChartViz(){
+        this.chartConfig.margin = Object.assign(JSON.parse(JSON.stringify(this.__defaultConfig.margin)),this.chartConfig.margin);
+        this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.__defaultConfig)),this.chartConfig);
+        var data = JSON.parse(JSON.stringify(this.data));
 
         //Set Dimensions
         var self = this;
@@ -88,14 +250,14 @@
         .attr("id","ground")
 
         //Set Margins
-        var margin = {top: 20, right: 80, bottom: 30, left: 40},
+        var margin = this.chartConfig.margin,
         width = width - margin.left - margin.right,
         height = height - margin.top - margin.bottom,
         g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
         var x = d3.scaleBand()
         .rangeRound([0, width])
-        .paddingInner(0.05)
+        .paddingInner(this.chartConfig.paddingLabelsGroup)
         .align(0.1);
 
         var y = d3.scaleLinear()
@@ -103,23 +265,54 @@
 
         var color = (this.chartConfig.color.length > 0) ? this.chartConfig.color : d3.schemeCategory20;
 
-        var keys = this.chartConfig.values;
+         var keys = this.chartConfig.keys;
 
-        this.data.forEach((d)=>{
+        if(this.chartConfig.legends && typeof this.chartConfig.legends === "string")
+          this.chartConfig.legends = [this.chartConfig.legends];
+
+        data.forEach((d)=>{
             d.total = 0;
             keys.forEach((el)=>{
                 d.total += d[el];
             });
         });
         
-        //data.sort(function(a, b) { return b.total - a.total; });
+        if(this.chartConfig.sort === 1 || this.chartConfig.sort === -1){
+            data = fnSort(data,[{"total":this.chartConfig.sort}]);
+        }
         
-        x.domain(this.data.map((d) => d[this.chartConfig.label]));
-        y.domain([0, d3.max(this.data, (d) => d.total)]).nice();
+        x.domain(data.map((d) => d[this.chartConfig.label]));
+        y.domain([0, d3.max(data, (d) => d.total)]).nice();
+
+        g.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+
+        var yCall = d3.axisLeft(y);
+
+        if(this.chartConfig.valueFormat)
+            yCall.tickFormat(d3.format(this.chartConfig.valueFormat));
+
+        if(this.chartConfig.gridLines)
+            yCall = yCall.tickSize(-width);
+
+        g.append("g")
+        .attr("class", "axis grid")
+        .call(yCall)
+        /*.append("text")
+        .attr("x", 2)
+        .attr("y", y(y.ticks().pop()) + 0.5)
+        .attr("dy", "0.32em")
+        .attr("fill", "#000")
+        .attr("font-weight", "bold")
+        .attr("text-anchor", "start")
+        .text("Population");*/
+
 
         g.append("g")
         .selectAll("g")
-        .data(d3.stack().keys(keys)(this.data))
+        .data(d3.stack().keys(keys)(data))
         .enter().append("g")
         .attr("fill",(d,i) => color[i])
         .selectAll("rect")
@@ -134,43 +327,36 @@
         .attr("x",(d) => x(d.data[this.chartConfig.label]))
         .attr("y",(d) => y(d[1]))
         .attr("height", (d) => { return y(d[0]) - y(d[1]); })
+        .attr("class",(d)=>{return (this.barClick && typeof this.barClick === "function") ? "bar cursor-pointer" : "bar"})
         .attr("width", x.bandwidth())
         .on("click",function(d){
             if(self.barClick && typeof self.barClick === "function")
                self.barClick(d,this); 
         })
         .append("svg:title")
-        .text((d,i)=>{
-            return ((this.chartConfig.valueFormat) ? d.key + " : " + d3.format(this.chartConfig.valueFormat)(d.data[d.key]) : d.key + " : " + d.data[d.key])
-        });
+        .text((d)=>{ return (this.tooltip && typeof this.tooltip === "function") ? this.tooltip(d,d.data) : d.key + " : " +d.data[d.key]})
 
         g.append("g")
-        .attr("class", "axis")
-        .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(x));
+        .selectAll("g")
+        .data(d3.stack().keys(keys)(data))
+        .enter()
+        .append("g")
+        .selectAll("line.bisector")
+        .data((d) => d)
+        .enter().append("line")
+        .attr("x1",(d) => x(d.data[this.chartConfig.label]))
+        .attr("y1",(d) => y(d[1]))
+        .attr("x2",(d) => x(d.data[this.chartConfig.label])+x.bandwidth())
+        .attr("y2",(d) => y(d[1]))
+        .attr("class","bisector")
 
-        var yCall = d3.axisLeft(y);
-        if(this.chartConfig.valueFormat)
-            yCall.tickFormat(d3.format(this.chartConfig.valueFormat));
 
-        g.append("g")
-        .attr("class", "axis")
-        .call(yCall)
-        /*.append("text")
-        .attr("x", 2)
-        .attr("y", y(y.ticks().pop()) + 0.5)
-        .attr("dy", "0.32em")
-        .attr("fill", "#000")
-        .attr("font-weight", "bold")
-        .attr("text-anchor", "start")
-        .text("Population");*/
 
         var legend = g.append("g")
-        .attr("font-family", "sans-serif")
-        .attr("font-size", 10)
+        .attr("class", "legend-text")
         .attr("text-anchor", "end")
         .selectAll("g")
-        .data(keys.slice().reverse())
+        .data(keys)
         .enter().append("g")
         .attr("transform",(d, i) => { return "translate(0," + i * 20 + ")"; });
 
@@ -185,7 +371,32 @@
         .attr("y", 9.5)
         .attr("dy", "0.32em")
         .attr("text-anchor","end")
-        .text((d)=> d);
+        .text((d,i)=> {return (this.chartConfig.legends.length > 0) ? this.chartConfig.legends[i] : d});
+
+        function fnSort(data, orderBy) {
+            orderBy = Array.isArray(orderBy) ? orderBy : [orderBy];
+            return data.sort((a, b) => {
+                for (let i = 0, size = orderBy.length; i < size; i++) {
+                    const key = Object.keys(orderBy[i])[0],
+                        o = orderBy[i][key],
+                        valueA = a[key],
+                        valueB = b[key];
+                    if (!(valueA || valueB)) {
+                        console.error("the objects from the data passed does not have the key '" + key + "' passed on sort!");
+                        return [];
+                    }
+                    if (+valueA === +valueA) {
+                        return o === -1 ? valueB - valueA : valueA - valueB;
+                    } else {
+                        if (valueA.localeCompare(valueB) > 0) {
+                            return o === -1 ? -1 : 1;
+                        } else if (valueA.localeCompare(valueB) < 0) {
+                            return o === -1 ? 1 : -1;
+                        }
+                    }
+                }
+            });
+        }
 
       }
     }
