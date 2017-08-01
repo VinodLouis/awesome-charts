@@ -134,6 +134,77 @@
       }
       _dataChanged(val){
         if(val){
+
+            //The Mandatory check
+            if(!this.chartConfig.label || typeof this.chartConfig.label !== "string"){
+                 throw new Error("'label' property under chartConfig should be an appropriate string value");
+                 return;
+            }
+            if(!this.chartConfig.keys || (typeof this.chartConfig.keys !== "string" && !Array.isArray(this.chartConfig.keys))){
+                 throw new Error("'keys' property under chartConfig should be an appropriate string/array value");
+                 return;
+            }
+
+            //Convert keys to array
+            this.chartConfig.keys = (!Array.isArray(this.chartConfig.keys)) ? [this.chartConfig.keys] : this.chartConfig.keys;
+
+            //Safe check for color
+            if(this.chartConfig.color){
+                if(!Array.isArray(this.chartConfig.color)){
+                    (console ? (console.warn || console.log) : function (m) { return m; })("color should be a valid array");
+                    this.chartConfig.color = this.__defaultConfig.color;
+                }else if(this.chartConfig.color.length < this.chartConfig.keys.length){
+                    (console ? (console.warn || console.log) : function (m) { return m; })("color length should be equal to keys length");
+                    this.chartConfig.color = this.__defaultConfig.color;
+                }
+            }
+
+            //Safe check for legends
+            if(this.chartConfig.legends){
+                if(typeof this.chartConfig.legends !== "string" && !Array.isArray(this.chartConfig.legends)){
+                    (console ? (console.warn || console.log) : function (m) { return m; })("legends should be valid string/array");
+                    this.chartConfig.legends = this.__defaultConfig.legends;
+                }else if(typeof this.chartConfig.legends === "string" && this.chartConfig.keys.length !== 1){
+                    (console ? (console.warn || console.log) : function (m) { return m; })("legends length should be equal to key length");
+                    this.chartConfig.legends = this.__defaultConfig.legends;
+                }else if(Array.isArray(this.chartConfig.legends) && this.chartConfig.legends.length < this.chartConfig.keys.length){
+                    (console ? (console.warn || console.log) : function (m) { return m; })("legends length should be equal to key length");
+                    this.chartConfig.legends = this.__defaultConfig.legends;
+                }
+            }
+
+            //Safe check for margin
+            if(this.chartConfig.margin){
+                if(typeof this.chartConfig.margin !== "object"){
+                    (console ? (console.warn || console.log) : function (m) { return m; })("margin should be of type object");
+                    this.chartConfig.margin = this.__defaultConfig.margin;
+                }else{
+                    var arrM = ["top","bottom","right","left"];
+                    arrM.forEach((d)=>{
+                        if(this.chartConfig.margin.hasOwnProperty(d) && typeof this.chartConfig.margin[d] !== "number"){
+                            (console ? (console.warn || console.log) : function (m) { return m; })(d + " in margin is not a valid number");
+                            this.chartConfig.margin[d] = this.__defaultConfig.margin[d];
+                        }
+                    });
+                }
+            }
+
+
+            if(typeof this.chartConfig.drawCircle !== "boolean" && typeof this.chartConfig.drawCircle !== "undefined"){
+                (console ? (console.warn || console.log) : function (m) { return m; })("drawCircle should be a boolean value");
+                            this.chartConfig.drawCircle = this.__defaultConfig.drawCircle;
+            }
+
+            if(typeof this.chartConfig.gridLines !== "boolean" && typeof this.chartConfig.gridLines !== "undefined"){
+                (console ? (console.warn || console.log) : function (m) { return m; })("gridLines should be a boolean value");
+                            this.chartConfig.gridLines = this.__defaultConfig.gridLines;
+            }
+
+            //Safe check for xlabelRotate
+            if(this.chartConfig.xlabelRotate && typeof this.chartConfig.xlabelRotate !== "number"){
+                (console ? (console.warn || console.log) : function (m) { return m; })("xlabelRotate is not a valid number");
+                this.chartConfig.xlabelRotate = this.__defaultConfig.xlabelRotate;
+            }
             this.paintDelayedChart();
         }
       }
@@ -144,9 +215,6 @@
       drawLineChartViz(){
         this.chartConfig.margin = Object.assign(JSON.parse(JSON.stringify(this.__defaultConfig.margin)),this.chartConfig.margin);
         this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.__defaultConfig)),this.chartConfig);
-
-        if(typeof this.chartConfig.keys === "string")
-          this.chartConfig.keys = [this.chartConfig.keys];
 
         if(this.chartConfig.legends && typeof this.chartConfig.legends === "string")
           this.chartConfig.legends = [this.chartConfig.legends];

@@ -1,9 +1,23 @@
 {
   "name": "awesome-charts",
-  "main": "awesome-charts.html",
+  "version":"1.0.0",
+  "authors":"Vinod Louis <vinodlouis@hotmail.com> (http://www.vinodlouis.com)",
+  "license":"MIT",
+  "description" : "polymer 2.0 charts using d3",
+  "main": "all-imports.html",
+  "ignore":[
+    "bower_components",
+    "images",
+    "test",
+    "polymer.json"
+  ],
   "dependencies": {
     "polymer": "Polymer/polymer#^2.0.0",
     "d3": "^4.10.0"
+  },
+  "repository":{
+    "type":"git",
+    "url" : "https://github.com/VinodLouis/awesome-charts"
   },
   "devDependencies": {
     "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^2.0.0",
@@ -11,6 +25,7 @@
     "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0"
   },
   "resolutions": {
-    "polymer": "^2.0.0"
+    "polymer": "^2.0.0",
+    "d3": "^4.10.0"
   }
 }

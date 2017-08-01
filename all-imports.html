@@ -1,0 +1,36 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="./awesome-pie-chart.html">
+<link rel="import" href="./awesome-area-chart.html">
+<link rel="import" href="./awesome-line-chart.html">
+<link rel="import" href="./awesome-bar-chart.html">
+<link rel="import" href="./awesome-stacked-bar-chart.html">
+<dom-module id="all-imports">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+  </template>
+
+  <script>
+    /**
+     * `awesome-charts`
+     * 
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class AllImports extends Polymer.Element {
+      static get is() { return 'all-imports'; }
+      static get properties() {
+        return {
+          
+        };
+      }
+    }
+
+    window.customElements.define(AllImports.is, AllImports);
+  </script>
+</dom-module>

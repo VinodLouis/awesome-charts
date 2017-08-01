@@ -8,8 +8,8 @@
             }
 
            polyline{
-                opacity: var(--polyline-opacity,0.3);
-                stroke: var(--polyline-stroke-color,#000000);
+                opacity: var(--polyline-opacity,0.5);
+                stroke: var(--polyline-stroke-color,#666666);
                 stroke-width: var(--polyline-stroke-width,2px);
                 fill: var(--polyline-fill,none);
                 pointer-events:none;
@@ -20,8 +20,8 @@
             }
 
             .pie-label-text{
-                font-size:var(--label-text-size,11px);
-                stroke:var(--label-stroke-color,#000000);
+                font-size:var(--label-text-size,12px);
+                stroke:var(--label-stroke-color,#999999);
                 stroke-width:var(--label-stroke-width,0.5);
             }
         </style>
@@ -173,13 +173,13 @@
       _dataChanged(){
         if(this.data){
             //Check for label property 
-            if(!this.chartConfig.label){
-                throw new Error("'label' property not defined for chartConfig");
+            if(!this.chartConfig.label || typeof this.chartConfig.label !== "string"){
+                throw new Error("'label' property of type string not defined for chartConfig");
                 return;
             }
             //Check for prop property
-            if(!this.chartConfig.prop){
-                throw new Error("'prop' property not defined for chartConfig");
+            if(!this.chartConfig.prop || typeof this.chartConfig.prop !== "string"){
+                throw new Error("'prop' property of type string not defined for chartConfig");
                 return;
             }
 

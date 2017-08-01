@@ -7,7 +7,7 @@
             display: block;
             }
             .axis .domain {
-              display: none;
+              display: var(--axis-line-display,none);
             }
 
             .legend-text{
@@ -120,6 +120,7 @@
           --legend-text-font-size : legend font size
           --bar-bisector-color : bar separation color between different labels
           --bar-bisector-width : bar separation width between different labels
+          --axis-line-display : axis line display
      */
     class AwesomeStackedBarChart extends Polymer.Element {
       static get is() { return 'awesome-stacked-bar-chart'; }
@@ -185,24 +186,24 @@
                     (console ? (console.warn || console.log) : function (m) { return m; })("legends should be valid string/array");
                     this.chartConfig.legends = this.__defaultConfig.legends;
                 }else if(typeof this.chartConfig.legends === "string" && this.chartConfig.keys.length !== 1){
-                    (console ? (console.warn || console.log) : function (m) { return m; })("legends should be an array or more than 1 as keys");
+                    (console ? (console.warn || console.log) : function (m) { return m; })("legends length should be equal to key length");
                     this.chartConfig.legends = this.__defaultConfig.legends;
                 }else if(Array.isArray(this.chartConfig.legends) && this.chartConfig.legends.length < this.chartConfig.keys.length){
-                    (console ? (console.warn || console.log) : function (m) { return m; })("legends should be an array or more than 1 as keys");
+                    (console ? (console.warn || console.log) : function (m) { return m; })("legends length should be equal to key length");
                     this.chartConfig.legends = this.__defaultConfig.legends;
                 }
             }
 
             //Safe check for sort
             if(this.chartConfig.sort && [-1,0,1].indexOf(this.chartConfig.sort) === -1){
-                (console ? (console.warn || console.log) : function (m) { return m; })("sort is not valid");
+                (console ? (console.warn || console.log) : function (m) { return m; })("sort value is not valid");
                 this.chartConfig.sort = this.__defaultConfig.sort;
             }
 
             //Safe check for margin
             if(this.chartConfig.margin){
                 if(typeof this.chartConfig.margin !== "object"){
-                    (console ? (console.warn || console.log) : function (m) { return m; })("margin not valid object");
+                    (console ? (console.warn || console.log) : function (m) { return m; })("margin should be of type object");
                     this.chartConfig.margin = this.__defaultConfig.margin;
                 }else{
                     var arrM = ["top","bottom","right","left"];
@@ -217,6 +218,7 @@
 
             //Safe check for paddingLabelsGroup
             if(this.chartConfig.paddingLabelsGroup && typeof this.chartConfig.paddingLabelsGroup !== "number"){
+                (console ? (console.warn || console.log) : function (m) { return m; })("paddingLabelsGroup is not a valid number");
                 this.chartConfig.paddingLabelsGroup = this.__defaultConfig.paddingLabelsGroup;
             }
 
