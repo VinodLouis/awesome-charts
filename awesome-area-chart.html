@@ -4,37 +4,103 @@
     <template>
         <style>
             :host {
-            display: block;
+                display: block;
             }
             .grid line {
-            stroke: #ddd;
+                stroke: var(--grid-stroke-color,#ddd);
+                stroke-width: var(--grid-stroke-width,1px);
             }
-            .circle{
-            cursor: pointer;
+            .cursor-pointer{
+                cursor: pointer;
             }
-            .hide-circle{
-            display: none
-            }
-
             .line{
-                opacity: 0.5;   
+                opacity:var(--chart-opacity,0.5);
             }
-
 
         </style>
-        <h2>Hello [[prop1]]!</h2>
-
         <div id="groundAreaChart"></div>
     </template>
 
     <script>
     /**
-     * `awesome-charts`
+     * `awesome-area-chart`
      *
      *
-     * @customElement
+     * @AwesomeAreaChart
      * @polymer
-     * @demo demo/index.html
+     * @demo demo/awesome-area-chart.html
+        
+     ------------
+      Properties
+     ------------
+     #1: Data is the array of object with minimal 2 key value pair which can act as label and key(s) for area chart   
+     *REQUIRED
+     data : {
+        type: Array,
+        //label here (date) should be an Js date object or a date string which can be type casted to a valid date
+        value:[{"credit":25000,"debit":10000,"date":"2016-12-31T18:30:00.000Z"},{"credit":43000,"debit":20000,"date":"2017-01-31T18:30:00.000Z"},{"credit":80000,"debit":10000,"date":"2017-02-28T18:30:00.000Z"},{"credit":65000,"debit":35000,"date":"2017-03-31T18:30:00.000Z"},{"credit":25000,"debit":40000,"date":"2017-04-30T18:30:00.000Z"},{"credit":90000,"debit":5000,"date":"2017-05-31T18:30:00.000Z"},{"credit":63000,"debit":7000,"date":"2017-06-30T18:30:00.000Z"},{"credit":41000,"debit":13500,"date":"2017-07-31T18:30:00.000Z"},{"credit":120000,"debit":47500,"date":"2017-08-31T18:30:00.000Z"},{"credit":70000,"debit":1000,"date":"2017-09-30T18:30:00.000Z"},{"credit":77000,"debit":42500,"date":"2017-10-31T18:30:00.000Z"},{"credit":145000,"debit":180000,"date":"2017-11-30T18:30:00.000Z"}];
+     }
+
+     #2 chart-config an composite object of properties not all are required provides additional customization to chart
+     chartConfig:{
+        type:Object,
+        value:{
+            //default size of the chart if containe has no width
+            chartSize:300,
+            
+            *REQUIRED
+            //The date object or date string property name which can be used to plot graph
+            label:"",
+            
+            *REQUIRED
+            //The values or properties to which graph shall be plot can be a string in case of single area chart or array in case of multi area chart
+            keys:"",
+
+            //Array of colors to be used in chart, lenght should be greater than equal to key(s)
+            color:[],
+
+            //Shows tooltip on top
+            aggregatedTooltip:true,
+            
+            //It accepts values in similar fashion as keys legends are given preference over keys in labelling    
+            legends:"",
+            
+            //Draws a circle at every end point on line when set to true 
+            drawCircle:false,
+            
+            //The x axis format identifier must be an valid d3.js time parse specifier(https://github.com/d3/d3-time-format)
+            timeFormat:"%d-%b-%y",
+            
+            //The y axis format identifier must be an valid d3.js number oarse specifier(https://github.com/d3/d3-format)
+            valueFormat:".2s",
+            
+            //The rotation value in degree for x axis alignment
+            xlabelRotate:45,
+
+            //draw background gridlines if set to true
+            gridLines:true
+        }   
+     }
+
+     ---------------
+      Methods
+     ---------------
+        #1 : circleClick : Function called when the circle is clicked passing parms include : (param1:data for the clicked circle,param3:property under context click, param3: the circle svg object clicked)
+
+     ---------------
+      Events
+     ---------------
+        #1 : tooltip 
+        Hook for displaying tooltip 
+        Return type : String
+        params passed include : (param1:data for the context point,param2: property name under context)  
+
+     ----------------
+      Mixins 
+     ----------------
+      --grid-stroke-color : Set grid line color
+      --grid-stroke-width : Set width of the grid lines
+      --chart-opacity : Set opacity for area          
      */
     class AwesomeAreaChart extends Polymer.Element {
       static get is() { return 'awesome-area-chart'; }
@@ -43,24 +109,21 @@
           chartConfig:{
             type: Object
           },
-          defaultConfig:{
+          __defaultConfig:{
             type: Object,
             value:{
                 chartSize:300,
-                label:"date",
+                label:"",
                 aggregatedTooltip:true,
-                values:["gross"],
+                keys:"",
                 legends:[],
-                drawCircle:false,
+                color:[],
+                drawCircle:true,
                 timeFormat:"%d-%b-%y",
                 valueFormat:".2s",
                 xlabelRotate:45,
                 gridLines:true
             }
-          },
-           prop1: {
-            type: String,
-            value: 'awesome-charts'
           },
           data:{
             type: Array,
@@ -79,10 +142,16 @@
       }
       paintDelayedChart(){
         var self = this;
-        setTimeout(()=>self.drawPieChartViz(),0)
+        setTimeout(()=>self.drawAreaChartViz(),0)
       }
-      drawPieChartViz(){
-        this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.defaultConfig)),this.chartConfig);
+      drawAreaChartViz(){
+        this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.__defaultConfig)),this.chartConfig);
+
+        if(typeof this.chartConfig.keys === "string")
+            this.chartConfig.keys = [this.chartConfig.keys];
+
+        if(this.chartConfig.legends && typeof this.chartConfig.legends === "string")
+            this.chartConfig.legends = [this.chartConfig.legends];
 
         d3.selection.prototype.moveToFront = function() {  
           return this.each(function(){
@@ -100,8 +169,7 @@
         
         //safely parse label as date
         this.data.forEach((el)=>{
-            el.mean = Math.floor((Math.random() * 900000) + 100000);  
-            maxValue = Math.max(maxValue,this.chartConfig.values.reduce(function(m, k){ return el[k] > m ? el[k] : m }, -Infinity));
+            maxValue = Math.max(maxValue,this.chartConfig.keys.reduce(function(m, k){ return el[k] > m ? el[k] : m }, -Infinity));
             if (!(el[this.chartConfig.label] instanceof Date))
                 el[this.chartConfig.label] = new Date(el[this.chartConfig.label]);
         });
@@ -189,8 +257,8 @@
         }
 
         //Define Color
-        var color = d3.schemeCategory10;
-        var gradientColor = d3.schemeCategory10;
+        var color = (this.chartConfig.color && this.chartConfig.color.length > 0) ? this.chartConfig.color : d3.schemeCategory10;
+        var gradientColor = (this.chartConfig.color && this.chartConfig.color.length > 0) ? this.chartConfig.color : d3.schemeCategory10;
 
         //Bring chart to playground
         var g = svg.append("g")
@@ -212,9 +280,9 @@
         .attr("class", "grid")
         .call(y_axis)
 
-        //Make the gradient for all values
+        //Make the gradient for all keys
 
-        this.chartConfig.values.forEach((el,ind)=>{
+        this.chartConfig.keys.forEach((el,ind)=>{
             
             svg.append("linearGradient")
             .attr("id", "AreaFillgradient_"+ el)
@@ -260,12 +328,12 @@
             .attr("cx",(d)=> x(parseTime(d.date)))
             .attr("cy",(d)=> y(d[el]))
             .attr("r",5)
-            .attr("class","circle "+ el)
+            .attr("class",(d)=>{return (self.circleClick && typeof self.circleClick === "function") ? "circle cursor-pointer "+ el : "circle " + el})
             .attr("stroke",(d,i)=>color[ind])
             .attr("fill",(d,i)=>color[ind])
             .on("click",function(d){
                 if(self.circleClick && typeof self.circleClick === "function")
-                   self.circleClick(d,this)         
+                   self.circleClick(d,el,this)         
             })
             .on('mouseenter',function(d,i){
 
@@ -288,16 +356,18 @@
             }      
         });
 
-        /*
-        this.chartConfig.values.forEach((el,ind)=>{
-            g.selectAll(".circle."+el)
-            .transition().duration(300).delay((d,i)=> (i*300))
-            .attr('r', 5)
-            .on("end", function(){
-                if(!self.chartConfig.aggregatedTooltip || self.chartConfig.values.length > 1)
-                    d3.select(this).moveToFront();
-            });
-        });*/    
+        if(this.chartConfig.drawCircle || (this.circleClick && typeof this.circleClick === "function")){
+            this.chartConfig.keys.forEach((el,ind)=>{
+                g.selectAll(".circle."+el)
+                //.transition().duration(300).delay((d,i)=> (i*300))
+                //.attr('r', 5)
+                .each(function(){
+                    if(!self.chartConfig.aggregatedTooltip || self.chartConfig.keys.length > 1)
+                        d3.select(this).moveToFront();
+                });
+            });    
+        }
+            
 
         
         
@@ -342,7 +412,7 @@
 
         */
 
-        if(!this.chartConfig.aggregatedTooltip || this.chartConfig.values.length > 1)
+        if(!this.chartConfig.aggregatedTooltip || this.chartConfig.keys.length > 1)
             return;
 
         //ToolTip formation
@@ -405,7 +475,7 @@
         // work out which date value is closest to the mouse
         //var d = mouseDate - d0[0] > d1[0] - mouseDate ? d1 : d0;
         hoverTT.text(
-            (self.tooltip && typeof self.tooltip === "function") ? self.tooltip(self.data[i-1],self.chartConfig.values[0]) : d3.timeFormat(self.chartConfig.timeFormat)(self.data[i-1][self.chartConfig.label]) + " ," + d3.format(self.chartConfig.valueFormat)(self.data[i-1][self.chartConfig.values[0]])
+            (self.tooltip && typeof self.tooltip === "function") ? self.tooltip(self.data[i-1],self.chartConfig.keys[0]) : d3.timeFormat(self.chartConfig.timeFormat)(self.data[i-1][self.chartConfig.label]) + " ," + d3.format(self.chartConfig.valueFormat)(self.data[i-1][self.chartConfig.keys[0]])
             );
         //hoverrect.attr('x', x(self.data[i-1][self.chartConfig.label])-50);
         //hoverrect.attr('y', -25);

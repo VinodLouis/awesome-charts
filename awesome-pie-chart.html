@@ -4,53 +4,133 @@
     <template>
         <style>
             :host {
-            display: block;
+                display: block;
             }
 
-            .line {
-            fill: none;
-            stroke: steelblue;
-            stroke-width: 2px;
+           polyline{
+                opacity: var(--polyline-opacity,0.3);
+                stroke: var(--polyline-stroke-color,#000000);
+                stroke-width: var(--polyline-stroke-width,2px);
+                fill: var(--polyline-fill,none);
+                pointer-events:none;
             }
 
-            .svg-playground{
-            background-color:#ffffff;
-            }
-
-            path.slice{
-            stroke-width:2px;
-            }
-
-            polyline{
-            opacity: .3;
-            stroke: black;
-            stroke-width: 2px;
-            fill: none;
-            pointer-events:none;
-            }
-
-            .path-link{
-            cursor:pointer;
+            .cursor-pointer{
+                cursor:pointer;
             }
 
             .pie-label-text{
-            font-size:11px;
-            stroke-width:0.5;
+                font-size:var(--label-text-size,11px);
+                stroke:var(--label-stroke-color,#000000);
+                stroke-width:var(--label-stroke-width,0.5);
             }
         </style>
-        <h2>Hello [[prop1]]!</h2>
-
         <div id="spanningPieChart"></div>
     </template>
 
     <script>
     /**
-     * `awesome-charts`
+     * `awesome-pie-chart`
      *
      *
-     * @customElement
+     * @AwesomePieChart
      * @polymer
-     * @demo demo/index.html
+     * @demo demo/awesome-pie-chart.html
+     * 
+     ------------
+      Properties
+     ------------
+     #1: Data is the array of object with minimal 2 key value pair which can act as label and prop for pie chart   
+     *REQUIRED
+     data : {
+        type: Array,
+        value:[{id:'grocery',value:10000},{id:'rent',value:5000},{id:'shopping',value:35000},{id:'bills',value:20000},{id:'other expense',value:1500}]
+     }
+
+     #2 chart-config an composite object of properties not all are required provides additional customization to chart
+     chartConfig:{
+        type: object,
+        value:{
+           //provide a size for chart else its takes the available width 
+           chartSize:300,  
+
+           //The size of the radius of the pie max to be 1, useful in adjusting the chart in case of huge labels
+           radiusSize:0.8, 
+
+           //In case of true labels are draw inside the circle of pie/donught good for small chart
+           labelsInside:false,
+
+           //Array of color size to be equal or greater than size of input data array
+           color:[],
+
+           //on pie hover control animation enable/disable
+           disableHoverAnimation:false,
+           
+           //duration of animation on pie hover in milliseconds 
+           hoverAnimationDuration:1000,
+            
+           //The point at which the chart should animateon hover if greater than 'outerRadius' chart animates outside if less animates inside
+           hoverRadius:0.8,
+           
+           *REQUIRED
+           //label or context text name on which pie chart is to be drawn must be from input object array
+           label:"",
+           
+           *REQUIRED
+           //property value to be considered for pie calculation
+           prop:"",
+           
+           //outer radius of the pie should be less than 'radiusSize'
+           outerRadius:0.7,
+
+           //inner radius of the pie if 0 behaves as a full pie chart else gives a feel of donught
+           innerRadius:0.4,
+
+           //corner radius of each pie 
+           cornerRadius:3,
+
+           //padding between each slice in chart
+           padding:0.015,
+
+           //The position of the polyline to be drawn for labels should be greater than 'outerRadius' 
+           spanningLine:0.8,
+
+           //The position of the labels outside chart make sense to be equal to outer radius always but can experiment 
+           textPositionRadius:0.7
+        }
+     }
+
+     ----------
+      Methods
+     ----------
+      #1 : pie-click
+       Function params include : (param1:<data of the pie clicked>,param2:percentage value of pie clicked:param3:svg object clicked)
+
+     --------
+      Events
+     --------
+     #1 : span-labels
+        Hook so that user can define his own text in the text labels
+        Return type : String
+        params passed include : (param1:<data of the pie in context>,param2:percentage value of pie in context:param3:svg object)
+
+     #2 : hover-labels
+        Hook so that user can define his own text in the hover tooltip
+        Return type : String
+        params passed include : (param1:<data of the pie in context>,param2:percentage value of pie in context:param3:svg object)
+   
+     ------------------------------
+      mixins supported for styling
+     ------------------------------
+      --polyline-opacity : To set opacity of the line for labels
+      --polyline-stroke-color, : To set stroke color of line
+      --polyline-stroke-width : To set stroke width of line
+      --polyline-fill : To set fill color for line 
+      
+      --label-text-size : To set label font size
+      --label-stroke-color : To set label color
+      --label-stroke-width : To set label stroke width
+      
      */
     class AwesomePieChart extends Polymer.Element {
       static get is() { return 'awesome-pie-chart'; }
@@ -59,7 +139,7 @@
           chartConfig:{
             type: Object
           },
-          defaultConfig:{
+          __defaultConfig:{
             type: Object,
             value:{
                chartSize:300,
@@ -69,6 +149,7 @@
                disableHoverAnimation:false,
                label:"",
                prop:"",
+               hoverAnimationDuration:1000,
                outerRadius:0.7,
                innerRadius:0.4,
                cornerRadius:3,
@@ -76,11 +157,8 @@
                spanningLine:0.8,
                hoverRadius:0.8,
                textPositionRadius:0.7
-            }
-          },
-          prop1: {
-            type: String,
-            value: 'awesome-charts'
+            },
+            observer:'_dataChanged'
           },
           data:{
             type: Array,
@@ -92,16 +170,24 @@
       ready(){
         super.ready();
       }
-      _dataChanged(val){
-        if(val){
+      _dataChanged(){
+        if(this.data){
+            //Check for label property 
             if(!this.chartConfig.label){
                 throw new Error("'label' property not defined for chartConfig");
                 return;
             }
+            //Check for prop property
             if(!this.chartConfig.prop){
                 throw new Error("'prop' property not defined for chartConfig");
                 return;
             }
+
+            if(this.chartConfig.radiusSize && (typeof this.chartConfig.radiusSize !== "number" || this.chartConfig.radiusSize < 0 || this.chartConfig.radiusSize > 1)){
+                throw new Error("'radiusSize' should be a numerical value between 0 to 1");
+                return;
+            }
+
             this.paintDelayedChart();
         }
       }
@@ -110,7 +196,7 @@
         setTimeout(()=>self.drawPieChartViz(),0)
       }
       drawPieChartViz(){
-        this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.defaultConfig)),this.chartConfig);
+        this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.__defaultConfig)),this.chartConfig);
 
         //Remove the old scraps
         d3.select(this.$.spanningPieChart).html("");
@@ -132,7 +218,7 @@
 
 
         //Set the color scale
-        var color = (this.chartConfig.color.length > 0) ? this.chartConfig.color : d3.schemeCategory20;
+        var color = (this.chartConfig.color && this.chartConfig.color.length > 0) ? this.chartConfig.color : d3.schemeCategory20;
 
         //Begin the chart drawing by property passed
         var pie = d3.pie()
@@ -175,7 +261,7 @@
         var path = slices.selectAll("path")
         .data(pie(this.data))
         .enter().append('path')
-        .attr("class","path-link")
+        .attr("class",()=>(this.pieClick && typeof this.pieClick === "function")?"cursor-pointer":"")
         .attr('fill',(d,i)=> color[i])
         .attr('d', arc)
         .on("mouseenter",function(d){
@@ -183,7 +269,7 @@
                 return;
             d3.select(this)
             .transition()
-            .duration(1000)
+            .duration(self.chartConfig.hoverAnimationDuration)
             .attr("d", outerArcAnimate)
         })
         .on("mouseleave",function(d){
@@ -193,11 +279,11 @@
             .attr("d", arc)
         })
         .on('click',function(d){
-            //pass data and element
-            self.pieClick(d.data,d,this);
+            if(self.pieClick && typeof self.pieClick === "function")
+                self.pieClick(d.data,((d.endAngle - d.startAngle) / (2 * Math.PI) * 100),this);
         })
         .append("title").text(function(d){
-            return (self.hoverLabels && typeof self.hoverLabels === "function") ? self.hoverLabels(d.data,d,this) : ((d.endAngle - d.startAngle) / (2 * Math.PI) * 100).toFixed(1) + " %";
+            return (self.hoverLabels && typeof self.hoverLabels === "function") ? self.hoverLabels(d.data,((d.endAngle - d.startAngle) / (2 * Math.PI) * 100),this) : ((d.endAngle - d.startAngle) / (2 * Math.PI) * 100).toFixed(1) + " %";
         });
 
         if(!this.chartConfig.labelsInside){
@@ -208,7 +294,7 @@
             .attr('dy', '.35em')
             .html(function(d){
                 //add "key: value" for given category.
-                return (self.spanLabels && typeof self.spanLabels === "function") ? self.spanLabels(d.data,d,this) : d.data[self.chartConfig.label] + ': <tspan>' + d.data[self.chartConfig.prop] + '</tspan>';
+                return (self.spanLabels && typeof self.spanLabels === "function") ? self.spanLabels(d.data,((d.endAngle - d.startAngle) / (2 * Math.PI) * 100),this) : d.data[self.chartConfig.label] + ': <tspan>' + d.data[self.chartConfig.prop] + '</tspan>';
             })
             .attr('class',"pie-label-text")
             .attr('transform',(d)=>{

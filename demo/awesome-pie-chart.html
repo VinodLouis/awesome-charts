@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>Pie chart demo</title>
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+    <link rel="import" href="../awesome-pie-chart.html">
+    
+    <custom-style>
+      <style is="custom-style" include="demo-pages-shared-styles">
+      </style>
+    </custom-style>
+  </head>
+  <body>
+    <div class="vertical-section-container centered">
+      <h3>Basic Pie chart</h3>
+      <demo-snippet>
+        <template>
+            <awesome-pie-chart class=".pie1" id="pie1" ></awesome-pie-chart>
+          <script>
+            document.getElementById("pie1").chartConfig = {
+               prop:"value",
+               label:"id"
+            };
+            document.getElementById("pie1").data = [{id:'grocery',value:10000},{id:'rent',value:5000},{id:'shopping',value:35000},{id:'bills',value:20000},{id:'other expense',value:1500}];
+          </script>
+
+        </template>
+      </demo-snippet>
+    </div>
+    <div class="vertical-section-container centered">
+      <h3>Configurable Pie chart with events</h3>
+      <demo-snippet>
+        <template>
+            <awesome-pie-chart id="pie2" ></awesome-pie-chart>
+          <script>
+            document.getElementById("pie2").chartConfig = {
+               prop:"value",
+               label:"id",
+               color:["#ff6961","#ffb861","#61f7ff","#ff61f7","#61a8ff"],
+               hoverRadius:0.78,
+               padding:0.030,
+               hoverAnimationDuration:500,
+               labelsInside:true,
+               outerRadius:0.8,
+               innerRadius:0.6,
+               radiusSize:0.85,
+
+            };
+            document.getElementById("pie2").data = [{id:'grocery',value:10000},{id:'rent',value:5000},{id:'shopping',value:35000},{id:'bills',value:20000},{id:'other expense',value:1500}];
+            document.getElementById("pie2").pieClick = function(data,p,el){
+              console.log(data,p,el);
+            }
+            document.getElementById("pie2").spanLabels = function(data,p,el){
+              return data.id + ': $ ' + data.value.toLocaleString('en')
+            }
+            document.getElementById("pie2").hoverLabels = function(data,p,el){
+              return data.id + ': $ ' + data.value.toLocaleString('en')  + ' ( ' + p.toFixed(2) + '% )';          
+            }
+          </script>
+
+        </template>
+      </demo-snippet>
+    </div>
+    <div class="vertical-section-container centered">
+      <h3>Closed Pie chart with events</h3>
+      <demo-snippet>
+        <template>
+            <awesome-pie-chart id="pie3" ></awesome-pie-chart>
+          <script>
+            document.getElementById("pie3").chartConfig = {
+               prop:"value",
+               label:"id",
+               innerRadius:0,
+               padding:0.030,
+               disableHoverAnimation:true
+            };
+            document.getElementById("pie3").data = [{id:'grocery',value:10000},{id:'rent',value:5000},{id:'shopping',value:35000},{id:'bills',value:20000},{id:'other expense',value:1500}];
+            document.getElementById("pie3").pieClick = function(data,p,el){
+              console.log(data,p,el);
+            }
+          </script>
+
+        </template>
+      </demo-snippet>
+    </div>
+  </body>
+</html>

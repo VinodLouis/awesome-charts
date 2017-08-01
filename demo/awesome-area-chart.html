@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>Area chart demo</title>
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+    <link rel="import" href="../awesome-area-chart.html">
+    
+    <custom-style>
+      <style is="custom-style" include="demo-pages-shared-styles">
+      </style>
+    </custom-style>
+  </head>
+  <body>
+    <div class="vertical-section-container centered">
+      <h3>Basic Area chart</h3>
+      <demo-snippet>
+        <template>
+            <awesome-area-chart id="area1"></awesome-area-chart>
+          <script>
+            document.getElementById("area1").chartConfig = {
+               keys:"credit",
+               label:"date",
+               drawCircle:false,
+               gridLines:false
+            };
+            document.getElementById("area1").data = [{"credit":25000,"debit":10000,"date":"2016-12-31T18:30:00.000Z"},{"credit":43000,"debit":20000,"date":"2017-01-31T18:30:00.000Z"},{"credit":80000,"debit":10000,"date":"2017-02-28T18:30:00.000Z"},{"credit":65000,"debit":35000,"date":"2017-03-31T18:30:00.000Z"},{"credit":25000,"debit":40000,"date":"2017-04-30T18:30:00.000Z"},{"credit":90000,"debit":5000,"date":"2017-05-31T18:30:00.000Z"},{"credit":63000,"debit":7000,"date":"2017-06-30T18:30:00.000Z"},{"credit":41000,"debit":13500,"date":"2017-07-31T18:30:00.000Z"},{"credit":120000,"debit":47500,"date":"2017-08-31T18:30:00.000Z"},{"credit":70000,"debit":1000,"date":"2017-09-30T18:30:00.000Z"},{"credit":77000,"debit":42500,"date":"2017-10-31T18:30:00.000Z"},{"credit":145000,"debit":180000,"date":"2017-11-30T18:30:00.000Z"}];
+          </script>
+
+        </template>
+      </demo-snippet>
+    </div>
+
+
+    <div class="vertical-section-container centered">
+      <h3>Multi Area chart with events</h3>
+      <demo-snippet>
+        <template>
+            <awesome-area-chart id="area2"></awesome-area-chart>
+          <script>
+            document.getElementById("area2").chartConfig = {
+               keys:["credit","debit"],
+               label:"date",
+               legends:["Deposit","Withdraw"],
+               color:["#89e200","#ff812f"],
+               timeFormat:"%d-%b",
+               valueFormat:"",
+            };
+            document.getElementById("area2").data = [{"credit":25000,"debit":10000,"date":"2016-12-31T18:30:00.000Z"},{"credit":43000,"debit":20000,"date":"2017-01-31T18:30:00.000Z"},{"credit":80000,"debit":10000,"date":"2017-02-28T18:30:00.000Z"},{"credit":65000,"debit":35000,"date":"2017-03-31T18:30:00.000Z"},{"credit":25000,"debit":40000,"date":"2017-04-30T18:30:00.000Z"},{"credit":90000,"debit":5000,"date":"2017-05-31T18:30:00.000Z"},{"credit":63000,"debit":7000,"date":"2017-06-30T18:30:00.000Z"},{"credit":41000,"debit":13500,"date":"2017-07-31T18:30:00.000Z"},{"credit":120000,"debit":47500,"date":"2017-08-31T18:30:00.000Z"},{"credit":70000,"debit":1000,"date":"2017-09-30T18:30:00.000Z"},{"credit":77000,"debit":42500,"date":"2017-10-31T18:30:00.000Z"},{"credit":145000,"debit":180000,"date":"2017-11-30T18:30:00.000Z"}];
+
+            document.getElementById("area2").circleClick = function(d,k,el){
+              console.log(d,k,el);
+            }
+
+            document.getElementById("area2").tooltip = function(d,prop){
+              return prop + " : " + d[prop].toLocaleString('en');
+            }
+          </script>
+        </template>
+      </demo-snippet>
+    </div>   
+  </body>
+</html>

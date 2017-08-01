@@ -65,7 +65,11 @@
         <template>
           <awesome-area-chart id="area1"></awesome-area-chart>
           <script type="text/javascript">
-            document.getElementById("area1").data = [{"gross":0,"date":"2016-12-31T18:30:00.000Z"},{"gross":0,"date":"2017-01-31T18:30:00.000Z"},{"gross":0,"date":"2017-02-28T18:30:00.000Z"},{"month":4,"year":2017,"gross":250000,"users":2,"date":"2017-03-31T18:30:00.000Z"},{"month":5,"year":2017,"gross":200000,"users":9,"date":"2017-04-30T18:30:00.000Z"},{"month":6,"year":2017,"gross":90000,"users":7,"date":"2017-05-31T18:30:00.000Z"},{"month":7,"year":2017,"gross":500000,"users":4,"date":"2017-06-30T18:30:00.000Z"},{"month":8,"year":2017,"gross":100000,"users":9,"date":"2017-07-31T18:30:00.000Z"},{"month":9,"year":2017,"gross":900000,"users":9,"date":"2017-08-31T18:30:00.000Z"},{"month":10,"year":2017,"gross":700000,"users":10,"date":"2017-09-30T18:30:00.000Z"},{"month":11,"year":2017,"gross":120000,"users":1,"date":"2017-10-31T18:30:00.000Z"},{"month":12,"year":2017,"gross":390000,"users":8,"date":"2017-11-30T18:30:00.000Z"}];
+          document.getElementById("pie1").chartConfig = {
+                values:"credit",
+               label:"date"
+            };
+            document.getElementById("area1").data = [{"credit":50000,"debit":10000,"date":"2016-12-31T18:30:00.000Z"},{"credit":43000,debit:20000,"date":"2017-01-31T18:30:00.000Z"},{"credit":80000,"debit":10000,"date":"2017-02-28T18:30:00.000Z"},{"credit":65000,"debit":35000,"date":"2017-03-31T18:30:00.000Z"},{"credit":25000,"debit":40000,"date":"2017-04-30T18:30:00.000Z"},{"credit":90000,"debit":5000,"date":"2017-05-31T18:30:00.000Z"},{"credit":63000,"debit":7000,"date":"2017-06-30T18:30:00.000Z"},{"credit":41000,"debit":13500,"date":"2017-07-31T18:30:00.000Z"},{"credit":120000,"debit":47500,"date":"2017-08-31T18:30:00.000Z"},{"credit":70000,"debit":1000,"date":"2017-09-30T18:30:00.000Z"},{"gross":77000,"debit":42500,"date":"2017-10-31T18:30:00.000Z"},{"credit":145000,"debit":180000,"date":"2017-11-30T18:30:00.000Z"}];
 
             document.getElementById("area1").circleClick = function(d,el){
               console.log(d,el);
