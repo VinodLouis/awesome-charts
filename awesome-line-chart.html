@@ -7,34 +7,98 @@
             display: block;
             }
             .grid line {
-            stroke: #ddd;
+                stroke: var(--grid-stroke-color,#ddd);
+                stroke-width:var(--grid-stroke-width,1px);
             }
-            .circle{
-            cursor: pointer;
+            .cursor-pointer{
+                cursor: pointer;
             }
-            .hide-circle{
-            display: none
-            }
-
             .line{
-                opacity: 0.5;   
+                opacity: var(--chart-opacity,0.5);
             }
-
-
         </style>
-        <h2>Hello [[prop1]]!</h2>
-
         <div id="groundLineChart"></div>
     </template>
 
     <script>
     /**
-     * `awesome-charts`
+     * `awesome-line-chart`
      *
      *
-     * @customElement
+     * @AwesomeLineChart
      * @polymer
-     * @demo demo/index.html
+     * @demo demo/awesome-line-chart.html
+         ------------
+          Properties
+         ------------
+         #1: Data is the array of object with minimal 2 key value pair which can act as label and key(s) for area chart
+         *REQUIRED
+         data : {
+            type: Array,
+            //label here (date) should be an Js date object or a date string which can be type casted to a valid date
+            value:[{"credit":25000,"debit":10000,"date":"2016-12-31T18:30:00.000Z"},{"credit":43000,"debit":20000,"date":"2017-01-31T18:30:00.000Z"},{"credit":80000,"debit":10000,"date":"2017-02-28T18:30:00.000Z"},{"credit":65000,"debit":35000,"date":"2017-03-31T18:30:00.000Z"},{"credit":25000,"debit":40000,"date":"2017-04-30T18:30:00.000Z"},{"credit":90000,"debit":5000,"date":"2017-05-31T18:30:00.000Z"},{"credit":63000,"debit":7000,"date":"2017-06-30T18:30:00.000Z"},{"credit":41000,"debit":13500,"date":"2017-07-31T18:30:00.000Z"},{"credit":120000,"debit":47500,"date":"2017-08-31T18:30:00.000Z"},{"credit":70000,"debit":1000,"date":"2017-09-30T18:30:00.000Z"},{"credit":77000,"debit":42500,"date":"2017-10-31T18:30:00.000Z"},{"credit":145000,"debit":180000,"date":"2017-11-30T18:30:00.000Z"}];
+         }
+
+         #2 chart-config an composite object of properties not all are required provides additional customization to chart
+         chartConfig:{
+            type:Object,
+            value:{
+                //default size of the chart if container has no width
+                chartSize:300,
+
+                *REQUIRED
+                //The date object or date string property name which can be used to plot graph
+                label:"",
+
+                *REQUIRED
+                //The values or properties to which graph shall be plot can be a string in case of single area chart or array in case of multi area chart
+                keys:"",
+
+                //Array of colors to be used in chart, lenght should be greater than equal to key(s)
+                color:[],
+
+                //Object of properties left,right,top,bottom : To set margins useful in case of handling long labels
+                margin:{left:35, right:80, top: 30, bottom: 50}
+
+                //It accepts values in similar fashion as keys legends are given preference over keys in labelling
+                legends:"",
+
+                //Draws a circle at every end point on line when set to true
+                drawCircle:true,
+
+                //The x axis format identifier must be an valid d3.js time parse specifier(https://github.com/d3/d3-time-format)
+                timeFormat:"%d-%b-%y",
+
+                //The y axis format identifier must be an valid d3.js number oarse specifier(https://github.com/d3/d3-format)
+                valueFormat:".2s",
+
+                //The rotation value in degree for x axis alignment
+                xlabelRotate:45,
+
+                //draw background gridlines if set to true
+                gridLines:true
+            }
+         }
+
+         ---------------
+          Methods
+         ---------------
+            #1 : circleClick : Function called when the circle is clicked passing parms include : (param1:data for the clicked circle,param3:property under context click, param3: the circle svg object clicked)
+
+         ---------------
+          Events
+         ---------------
+            #1 : tooltip
+            Hook for displaying tooltip
+            Return type : String
+            params passed include : (param1:data for the context point,param2: property name under context)
+
+         ----------------
+          Mixins
+         ----------------
+          --grid-stroke-color : Set grid line color
+          --grid-stroke-width : Set width of the grid lines
+          --chart-opacity : Set opacity for area
      */
     class AwesomeLineChart extends Polymer.Element {
       static get is() { return 'awesome-line-chart'; }
@@ -43,23 +107,21 @@
           chartConfig:{
             type: Object
           },
-          defaultConfig:{
+          __defaultConfig:{
             type: Object,
             value:{
                 chartSize:300,
-                label:"date",
-                aggregatedTooltip:true,
-                values:["gross"],
+                label:"",
+                keys:"",
                 legends:[],
+                color:[],
+                drawCircle:true,
                 timeFormat:"%d-%b-%y",
                 valueFormat:".2s",
                 xlabelRotate:45,
-                gridLines:true
+                gridLines:true,
+                margin:{left:35, right:80, top: 30, bottom: 50}
             }
-          },
-           prop1: {
-            type: String,
-            value: 'awesome-charts'
           },
           data:{
             type: Array,
@@ -69,7 +131,6 @@
       }
       ready(){
         super.ready();
-        this.paintDelayedChart();
       }
       _dataChanged(val){
         if(val){
@@ -78,10 +139,17 @@
       }
       paintDelayedChart(){
         var self = this;
-        setTimeout(()=>self.drawPieChartViz(),0)
+        setTimeout(()=>self.drawLineChartViz(),0)
       }
-      drawPieChartViz(){
-        this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.defaultConfig)),this.chartConfig);
+      drawLineChartViz(){
+        this.chartConfig.margin = Object.assign(JSON.parse(JSON.stringify(this.__defaultConfig.margin)),this.chartConfig.margin);
+        this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.__defaultConfig)),this.chartConfig);
+
+        if(typeof this.chartConfig.keys === "string")
+          this.chartConfig.keys = [this.chartConfig.keys];
+
+        if(this.chartConfig.legends && typeof this.chartConfig.legends === "string")
+          this.chartConfig.legends = [this.chartConfig.legends];
 
         d3.selection.prototype.moveToFront = function() {  
           return this.each(function(){
@@ -99,8 +167,7 @@
         
         //safely parse label as date
         this.data.forEach((el)=>{
-            el.mean = Math.floor((Math.random() * 900000) + 100000);  
-            maxValue = Math.max(maxValue,this.chartConfig.values.reduce(function(m, k){ return el[k] > m ? el[k] : m }, -Infinity));
+            maxValue = Math.max(maxValue,this.chartConfig.keys.reduce(function(m, k){ return el[k] > m ? el[k] : m }, -Infinity));
             if (!(el[this.chartConfig.label] instanceof Date))
                 el[this.chartConfig.label] = new Date(el[this.chartConfig.label]);
         });
@@ -128,7 +195,7 @@
         .attr("height", height);
 
         //Set Margins
-        var margin = {left:35, right:80, top: 30, bottom: 50}
+        var margin = this.chartConfig.margin;
         var width = svg.attr("width") - margin.left - margin.right;
         var height = svg.attr("height") - margin.bottom - margin.top;
 
@@ -167,9 +234,8 @@
             return line;
         }
 
-
         //Define Color
-        var color = d3.schemeCategory20;
+        var color = (this.chartConfig.color && this.chartConfig.color.length > 0) ? this.chartConfig.color : d3.schemeCategory20;
 
         //Bring chart to playground
         var g = svg.append("g")
@@ -191,9 +257,9 @@
         .attr("class", "grid")
         .call(y_axis)
 
-        //Make the gradient for all values
+        //Make the gradient for all keys
 
-        this.chartConfig.values.forEach((el,ind)=>{    
+        this.chartConfig.keys.forEach((el,ind)=>{
 
             var lineFunction = multiline(el);
 
@@ -213,58 +279,56 @@
                   .attr("stroke-width",0.5)
                   .attr("stroke",()=>color[ind])
 
-            g.selectAll(".circle."+el)
-            .data(this.data)
-            .enter()
-            .append("circle")
-            .attr("cx",(d)=> x(parseTime(d.date)))
-            .attr("cy",(d)=> y(d[el]))
-            .attr("r",5)
-            .attr("class","circle "+ el)
-            .attr("stroke",(d,i)=>color[ind])
-            .attr("fill",(d,i)=>color[ind])
-            .on("click",function(d){
-                if(self.circleClick && typeof self.circleClick === "function")
-                   self.circleClick(d,this)         
-            })
-            .on('mouseenter',function(d,i){
+            if(this.chartConfig.drawCircle || (this.circleClick && typeof this.circleClick === "function")){
+                g.selectAll(".circle."+el)
+                .data(this.data)
+                .enter()
+                .append("circle")
+                .attr("cx",(d)=> x(parseTime(d.date)))
+                .attr("cy",(d)=> y(d[el]))
+                .attr("r",5)
+                .attr("class",(d)=>{return (self.circleClick && typeof self.circleClick === "function") ? "circle cursor-pointer "+ el : "circle " + el})
+                .attr("stroke",(d,i)=>color[ind])
+                .attr("fill",(d,i)=>color[ind])
+                .on("click",function(d){
+                    if(self.circleClick && typeof self.circleClick === "function")
+                       self.circleClick(d,el,this)
+                })
+                .on('mouseenter',function(d,i){
 
-                currHover = g.append("circle").attr("cx",this.getAttribute("cx"))
-                .attr("cy",this.getAttribute("cy"))
-                .attr("r",10)
-                .attr("fill","none")
-                .attr("stroke",this.getAttribute("stroke"))
+                    currHover = g.append("circle").attr("cx",this.getAttribute("cx"))
+                    .attr("cy",this.getAttribute("cy"))
+                    .attr("r",10)
+                    .attr("fill","none")
+                    .attr("stroke",this.getAttribute("stroke"))
 
-            //console.log(this);
-            }).on("mouseleave",function(d,i){
-                currHover.remove();
-            })
+                //console.log(this);
+                }).on("mouseleave",function(d,i){
+                    currHover.remove();
+                })
 
-            .append("svg:title")
-            .text((d, i)=>{
-                if(this.tooltip && typeof this.tooltip === "function")
-                   return this.tooltip(d,el);
-                return el + " : " + d[el];
-            });
-
-            
+                .append("svg:title")
+                .text((d, i)=>{
+                    if(this.tooltip && typeof this.tooltip === "function")
+                       return this.tooltip(d,el);
+                    return el + " : " + d[el];
+                });
+            }
         });
 
-        /*
-        this.chartConfig.values.forEach((el,ind)=>{
-            g.selectAll(".circle."+el)
-            .transition().duration(300).delay((d,i)=> (i*300))
-            .attr('r', 5)
-            .on("end", function(){
-                if(!self.chartConfig.aggregatedTooltip || self.chartConfig.values.length > 1)
-                    d3.select(this).moveToFront();
+        if(this.chartConfig.drawCircle || (this.circleClick && typeof this.circleClick === "function")){
+            this.chartConfig.keys.forEach((el,ind)=>{
+                g.selectAll(".circle."+el)
+                //.transition().duration(300).delay((d,i)=> (i*300))
+                //.attr('r', 5)
+                .each(function(){
+                    if(self.chartConfig.drawCircle || self.chartConfig.keys.length > 1)
+                        d3.select(this).moveToFront();
+                });
             });
-        });*/    
+        }
 
-        
-        
         //g.selectAll()
-        
 
         //TODO Animation
         /*
