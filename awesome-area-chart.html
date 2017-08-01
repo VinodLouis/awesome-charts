@@ -59,6 +59,9 @@
             //Array of colors to be used in chart, lenght should be greater than equal to key(s)
             color:[],
 
+            //Object of properties left,right,top,bottom : To set margins useful in case of handling long labels
+            margin:{left:35, right:80, top: 30, bottom: 50}
+
             //Shows tooltip on top
             aggregatedTooltip:true,
             
@@ -102,6 +105,7 @@
       --grid-stroke-width : Set width of the grid lines
       --chart-opacity : Set opacity for area          
      */
+
     class AwesomeAreaChart extends Polymer.Element {
       static get is() { return 'awesome-area-chart'; }
       static get properties() {
@@ -114,6 +118,7 @@
             value:{
                 chartSize:300,
                 label:"",
+                margin:{left:35, right:80, top: 30, bottom: 50},
                 aggregatedTooltip:true,
                 keys:"",
                 legends:[],
@@ -133,7 +138,6 @@
       }
       ready(){
         super.ready();
-        this.paintDelayedChart();
       }
       _dataChanged(val){
         if(val){
@@ -145,6 +149,7 @@
         setTimeout(()=>self.drawAreaChartViz(),0)
       }
       drawAreaChartViz(){
+        this.chartConfig.margin = Object.assign(JSON.parse(JSON.stringify(this.__defaultConfig.margin)),this.chartConfig.margin);
         this.chartConfig = Object.assign(JSON.parse(JSON.stringify(this.__defaultConfig)),this.chartConfig);
 
         if(typeof this.chartConfig.keys === "string")
@@ -197,7 +202,7 @@
         .attr("height", height);
 
         //Set Margins
-        var margin = {left:35, right:80, top: 30, bottom: 50}
+        var margin = this.chartConfig.margin;
         var width = svg.attr("width") - margin.left - margin.right;
         var height = svg.attr("height") - margin.bottom - margin.top;
 
