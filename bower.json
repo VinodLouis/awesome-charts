@@ -9,7 +9,7 @@
     "bower_components",
     "images",
     "test",
-    "bower.json"
+    "bower.json",
     "polymer.json"
   ],
   "dependencies": {
