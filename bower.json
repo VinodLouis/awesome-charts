@@ -1,10 +1,10 @@
 {
   "name": "awesome-charts",
-  "version":"0.0.2",
+  "version":"1.0.0",
   "authors":"Vinod Louis <vinodlouis@hotmail.com> (http://www.vinodlouis.com)",
   "license":"MIT",
   "description" : "polymer 2.0 charts using d3",
-  "main": "all-imports.html",
+  "main": "index.html",
   "ignore":[
     "bower_components",
     "images",

@@ -25,7 +25,7 @@ After the depepndency is downloaded import the required charts from the folder a
  - If required single charts then use accordingly
 
 ### Documentaion & Demo
-For Documentation and demo please visit to [coming soon]()
+For Documentation and demo please visit to [awesome-charts-documentation](http://www.vinodlouis.com/demos/awesome-charts-documentation/)
 
 ### Development
 Want to contribute? Great!.
@@ -34,7 +34,9 @@ Please join me in creating this library :)
 
 You are welcome to contribute, feel free to raise issues on github regrading chart flaws and documentaion lags. If you wish to add new feature or contribute in sense, you are always invited.
 
-Fork the github [repository](https://github.com/VinodLouis/awesome-charts) and create a pull request with the summary of changes. 
+Fork the github [code-repository](https://github.com/VinodLouis/awesome-charts) and create a pull request with the summary of changes. 
+
+For contributing to documention use the [documentation-repository](https://github.com/VinodLouis/awesome-charts-documentation) similarly.
 
 I'll try my best to look into the changes soonest as possible.   
 
