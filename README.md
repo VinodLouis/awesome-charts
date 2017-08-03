@@ -2,7 +2,7 @@
 
 # \<awesome-charts\>
 
-Welcome to awesome charts. This is a small library for polymer 2.0 using d3 for custom charts. The charts exposes alot of configuration and hooks so that the viz becomes interative.
+Welcome to awesome charts. This is a library for polymer 2.0 using d3.js for custom charts. The charts exposes a lot of configuration and hooks so that the viz becomes interative.
 
 ### Installation
 
@@ -22,15 +22,30 @@ $ npm install awesome-charts --save
 After the depepndency is downloaded import the required charts from the folder awesome-charts/*
 
  - You can use all-imports.html to import all charts
- - If required single charts then can also import it separately
+ - If required single charts then use accordingly
 
 ### Documentaion & Demo
 For Documentation and demo please visit to [coming soon]()
 
 ### Development
-Want to contribute? Great!, join me in creating this library :)
+Want to contribute? Great!.
 
-You are welcome to contribute, feel free to raise issues on github regrading chart flaws and documentaion lags. If you wanna add new feature or contribute in sense, You are always welcome. Just fork the github [repository](https://github.com/VinodLouis/awesome-charts) and create a pull request with the summary of changes. I'll try my best to look into the changes soonest as possible.   
+Please join me in creating this library :)
+
+You are welcome to contribute, feel free to raise issues on github regrading chart flaws and documentaion lags. If you wish to add new feature or contribute in sense, you are always invited.
+
+Fork the github [repository](https://github.com/VinodLouis/awesome-charts) and create a pull request with the summary of changes. 
+
+I'll try my best to look into the changes soonest as possible.   
+
+### Releases
+
+The ideal version to be used for public is from v1.0.0, later each version will stick to the semantic version pattern i.e:
+
+1. Bug fixes and other minor changes: Patch release, increment the last number, e.g. 1.0.1
+2. New features which don't break existing features: Minor release, increment the middle number, e.g. 1.1.0
+3. Changes which break backwards compatibility: Major release, increment the first number, e.g. 2.0.0
+
 
 License
 ----
